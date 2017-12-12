@@ -1,0 +1,68 @@
+// :host{
+//   display: block;
+//   position: fixed;
+//   width: 100%;
+//   height: 100%;
+//   background-color: rgba(grey, 0.8);
+//   top: 0;
+//   left: 0;
+//   z-index: 9000;
+//   .wtk_alocNewContentWrapper {
+//     padding: 16px;
+//     width: 500px;
+//     margin: 50px auto;
+//     background-color: grey;
+//     border-radius: 5px;
+//   }
+// }
+:host{
+  @import 'brand';
+  @import 'basic';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background-color: rgba(0,0,0,0.5);
+  padding-top: 16px;
+  @include flex();
+  justify-content: center;
+  
+  form{
+  @include whiteframe-1dp();
+    // @include whiteframe1();
+    margin: auto;
+    background-color: white;
+    padding: 16px;
+    border-radius: 5px;
+    .wtkMetaList{
+      & > div:first-of-type{
+        margin-right: 8px;
+      }
+      & > div{
+        width: 250px;
+
+      }
+    }
+  }
+  #wtk__imgItemCtrl__upload{
+    max-width: 800px;
+    max-height: 600px;
+    width: calc(100% - 16px);
+    min-height: 200px;
+    margin: auto;
+    border: 2px dashed $colS;
+    box-sizing: border-box;
+    padding: 8px;
+    input{
+
+    }
+    .imgUploader{
+      width: 200px;
+      margin: 8px 0;
+    }
+    
+  }
+  
+}

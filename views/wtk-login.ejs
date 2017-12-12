@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/js/wtk/css/wtk.css' />
+  </head>
+  <style>
+    #formWrapper{
+      display: block;
+      width: 300px;
+      margin: 150px auto;
+    }
+    #wtkForgotPswdForm{
+      display: none;
+    }
+
+  </style>
+  <body>
+  <div id="formWrapper" class="wtk-whiteframe-1dp wtk-padding-2x">
+    
+    <form action="" id="wtkForgotPswdForm">
+      <p class="wtk-headline wtk-colP wtk-margin-bottom">LOG IN</p>
+      <div class="inputWrapper">
+        <label for="">E-mail</label>
+        <input 
+            type="mail" 
+            name="wtkLoginName" 
+            value="jarkovsky.d@poskytuj.cz" 
+            required="">
+        <div class="errMsg">
+          <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+          <div class="errMsg required">Toto pole musí být vyplněno!</div>
+        </div>
+      </div>
+      <p id="globalMsg" class="wtk-margin-bottom"></p>
+      <input type="submit" class="wtk-bg-colP wtk-colL" value="RESET HESLO">
+    </form>
+    <form action="" id="wtkLoginForm" class="">
+      <p class="wtk-headline wtk-colP wtk-margin-bottom">LOG IN</p>
+      <div class="inputWrapper">
+        <label for="">E-mail</label>
+        <input 
+            type="mail" 
+            name="wtkLoginName" 
+            value="jarkovsky.d@poskytuj.cz" 
+            required="">
+        <div class="errMsg">
+          <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+          <div class="errMsg required">Toto pole musí být vyplněno!</div>
+        </div>
+      </div>
+      <div class="inputWrapper">
+        <label for="">Heslo</label>
+        <input 
+            type="password" 
+            name="wtkLoginPswd" 
+            value="Dada_144_1993" 
+            required="">
+        <div class="errMsg">
+          <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+          <div class="errMsg required">Toto pole musí být vyplněno!</div>
+        </div>
+      </div>
+      <div class="wtk-align-between-center">
+        <input type="submit" class="wtk-bg-colP wtk-colL" value="LOGIN">
+        <input type="button" id="wtkPswdReset" value="ZAPOMĚL JSEM HESLO">
+      </div>
+    </form>
+  </div>
+
+    <script src="/js/wtk/webcomponentsjs-master/webcomponents-sd-ce.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"></script>
+    <script src="/js/wtk/wtk-login.js"></script>
+  </body>
+</html>

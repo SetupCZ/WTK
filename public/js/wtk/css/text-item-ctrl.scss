@@ -1,0 +1,17 @@
+  
+  #wtk__textItemWrapper{
+    @import 'brand';
+    @import 'basic';
+    background-color: $colP;
+    color: $colL;
+    border-radius: 2px;
+    padding: 8px 0;
+    margin: 8px 0;
+  @include whiteframe-1dp();
+    // @include whiteframe1();
+    h3{
+      padding-left: 8px;
+    }
+  }
+:host{
+}

@@ -1,0 +1,6 @@
+{
+  "galeryPath":"../public/img/wtkGalery",
+  "galeryPublicPath":"/img/wtkGalery",
+  "jwtPswd":"123",
+  "uploadMaxSize":5000000
+}

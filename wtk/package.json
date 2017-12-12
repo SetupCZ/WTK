@@ -1,0 +1,10 @@
+{
+  "name": "wtk",
+  "description": "wtk",
+  "version": "0.0.1",
+  "author": {
+    "name": "Dan Jarkovský",
+    "email": "jarkovsky.d@gmail.com"
+  },
+  "license": "MIT"
+}

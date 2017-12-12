@@ -1,0 +1,60 @@
+<form id="wtk__imgItemWrapper" class="wtk-whiteframe-1dp">
+  <div class="wtk-layout wtk-align-between-center">
+    <h3 class="wtk-subhead">New image item</h3>
+    <div>
+      <button type="button" id="wtk__imgItemCtrl__close" class="wtk-colL">
+        <img src="" alt="">
+        x
+      </button>
+    </div>
+  </div>
+  <div id="wtk__imgItemCtrl__upload">
+    <div id="uploader" >
+      click here or drag here your images for preview.
+    </div>
+    <img class="imgUploader" src=""/>
+    <p id="imgName"></p>
+    <div class="wtk-layout wtk-align-center-center">
+      <label for="img" class="wtk-fileInput">
+        <input type="file" name="img"  id="wtk__imgItemCtrl__fileInput" />
+        <span>Vyberte soubor</span>
+      </label>
+    </div>
+  </div>
+  <wtk-img-item-controls>
+    <div class="wtk-align-between-start wtk-margin-top wtk-padding-x">
+      <div class="inputWrapper wtk-col-5">
+        <label for="wtkWidth">Šířka</label>
+        <input 
+            type="text"
+            pattern="(([0-9])+( )?(px|%|vw|vh)|(auto|none|initial|inherit))"
+            placeholder="auto"
+            title="0-999 px/vh/vw/% | auto/none/initial/inherit "
+            name="wtkWidth">
+        <div class="errMsg">
+          <div class="errMsg pattern">Špatný formát. Musí obsahovat pouze hodnoty pro CSS výšku a šířku. 0-999 px/vh/vw/% | auto/none/initial/inherit </div>
+          <div class="errMsg required">Toto pole musí být vyplněno!</div>
+        </div>
+      </div>
+      <div class="inputWrapper wtk-col-5">
+        <label for="wtkWidth">Výška</label>
+        <input 
+            type="text"
+            pattern="(([0-9])+( )?(px|%|vw|vh)|(auto|none|initial|inherit))"
+            placeholder="auto"
+            title="0-999 px/vh/vw/% | auto/none/initial/inherit "
+            name="wtkHeight">
+        <div class="errMsg">
+          <div class="errMsg pattern">Špatný formát. Musí obsahovat pouze hodnoty pro CSS výšku a šířku. 0-999 px/vh/vw/% | auto/none/initial/inherit </div>
+          <div class="errMsg required">Toto pole musí být vyplněno!</div>
+        </div>
+      </div>
+    </div>
+    <button type="submit" id="wtk__imgItemCtrl__save" class="wtk-colL wtk-padding-left">
+      <img src="" alt="">
+      save
+    </button>
+    
+  </wtk-img-item-controls>
+</form>
+<!-- // <script type="text/javascript">tinymce.init({ selector:'textarea' });</script> -->

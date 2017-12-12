@@ -1,0 +1,62 @@
+  <!-- .wtk_alocNewContentWrapper is defined in wtk-new-content.js-->
+    
+  <form id="wtk__newGroupForm" action="" class="wtk-whiteframe-1dp">
+    <div class="wtk-layout wtk-align-between-center wtk-margin-bottom">
+      <h1 class="wtk-headline">Vytvořit novou příspěvek</h1>
+      <button type="button" id="wtk__closeAlocNewGroupBtn" class="icon-button wtkCloseBtn">x</button>
+    </div>
+    <div>
+      <!-- <input 
+          type="hidden" 
+          name="wtkName" 
+          pattern="^([a-zA-Z0-9])+$" 
+          required="required" 
+          title="Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!"> -->
+    </div>
+    <!--<div class="inputWrapper">
+      <label for="">Title</label>
+      <input 
+          type="text" 
+          name="wtkTitle" 
+          pattern="^([a-zA-Z0-9])+$" 
+          required="required" 
+          title="Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!">
+      <div class="errMsg">
+        <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+        <div class="errMsg required">Toto pole musí být vyplněno!</div>
+      </div>
+    </div>-->
+
+    <p>Atributy pro content</p>
+    <div class="wtkAttributesHidden">
+      <!-- schované inputy pro odeslání-->
+    </div>
+    <input type="submit" value="uložit">
+    <input type="button" value="PŘIDAT ATRIBUT" id="wtk__addAttrToContenBtn">
+  </form>
+    <div class="wtkAttributesHidden">
+
+    </div>
+
+
+    <div class="wtkNewAttribute wtk-hidden">
+      <form id="wtk__newAttrForm" action="" class="wtk-whiteframe-1dp">
+        <h3 class="wtk-subhead">Nová atribut</h3>
+        <div class="inputWrapper">
+          <label for="">Type</label>
+          <select 
+              id="wtk__attrTypeSelect" 
+              name="wtkAttrType"
+              required="required"></select>
+          <div class="errMsg">
+            <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+            <div class="errMsg required">Toto pole musí být vyplněno!</div>
+          </div>
+        </div>
+        
+        <!-- here goes inputs for new attr -->
+        <div class="wtkAttrValue"></div>
+        <input type="submit" value="ULOŽIT ATRIBUT">
+      </form>
+    </div>
+    

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/css/style.css' />
+    <link rel='stylesheet' href='/js/wtk/css/wtk.css' />
+  </head>
+  <style>
+    #formWrapper{
+      display: block;
+      width: 300px;
+      margin: 150px auto;
+    }
+    #wtkNewPswdForm{
+      display: none;
+    }
+  </style>
+  <body>
+  <div id="formWrapper" class="wtk-whiteframe-1dp wtk-padding-2x">
+    <form action="" id="wtkNewPswdForm" class="">
+      <h2 class="wtk-title wtk-margin-bottom-2x">Nové heslo</h2>
+      <div class="inputWrapper">
+        <label for="">Nové Heslo</label>
+        <input 
+            type="password" 
+            name="wtkLoginPswdNew" 
+            value="Dada_144_1993" 
+            required="">
+        <div class="errMsg">
+          <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+          <div class="errMsg required">Toto pole musí být vyplněno!</div>
+        </div>
+      </div>
+      <div class="inputWrapper">
+        <label for="">Nové Heslo znovu</label>
+        <input 
+            type="password" 
+            name="wtkLoginPswdNewAgain" 
+            value="Dada_144_1993" 
+            required="">
+        <div class="errMsg">
+          <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+          <div class="errMsg required">Toto pole musí být vyplněno!</div>
+        </div>
+      </div>
+      <input type="submit" class="wtk-bg-colP wtk-colL" value="ULOŽIT">
+    </form>
+    <form action="" id="wtkResetPswdForm" class="">
+    <h2 class="wtk-title wtk-margin-bottom-2x">Bezpečnostní otázky</h2>
+    <div class="">
+      <div class="inputWrapper">
+        <label for="">1. Otázka</label>
+        <select 
+            name="wtkSecQ1" 
+            required="">
+          <option vallue="null">-----</option>
+          
+        </select>
+
+        <div class="errMsg">
+          <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+          <div class="errMsg required">Toto pole musí být vyplněno!</div>
+        </div>
+      </div>
+      <div class="inputWrapper">
+        <label for="">1. Odpověď</label>
+        <input
+            type="text"
+            name="wtkSecA1" 
+            required="">
+
+        <div class="errMsg">
+          <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+          <div class="errMsg required">Toto pole musí být vyplněno!</div>
+        </div>
+      </div>
+    </div>
+    <div class="wtk-bg-colD wtk-margin-bottom-3x wtk-margin-top" style="height: 1px;"></div>
+    <div class="">
+      <div class="inputWrapper">
+        <label for="">2. Otázka</label>
+        <select 
+            name="wtkSecQ2" 
+            required="">
+            <option value="null">-----</option>
+        </select>
+
+        <div class="errMsg">
+          <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+          <div class="errMsg required">Toto pole musí být vyplněno!</div>
+        </div>
+      </div>
+      <div class="inputWrapper">
+        <label for="">2. Odpověď</label>
+        <input
+            type="text"
+            name="wtkSecA2" 
+            required="">
+
+        <div class="errMsg">
+          <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+          <div class="errMsg required">Toto pole musí být vyplněno!</div>
+        </div>
+      </div>
+    </div>
+    <input type="submit" class="wtk-bg-colP wtk-colL" value="RESET HESLA">
+    </form>
+  </div>
+
+    <script src="/js/wtk/webcomponentsjs-master/webcomponents-sd-ce.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"></script>
+    <script src="/js/wtk/wtk-resetPswd.js"></script>
+  </body>
+</html>

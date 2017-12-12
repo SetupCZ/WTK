@@ -1,0 +1,80 @@
+  <!-- .wtk_alocNewContentWrapper is defined in wtk-new-content.js-->
+    
+  <button id="wtk__closeAddNewAttributeBtn">x</button>
+  <h1>Vytvořit nový příspěvek</h1>
+  <form action="">
+    <div class="inputWrapper">
+      <label for="">Type</label>
+      <select 
+          id="wtk__attrTypeSelect" 
+          name="wtkAttrType"
+          required="required"></select>
+      <!-- <input 
+          type="text" 
+          name="wtkAttrLabel" 
+          pattern="^([a-zA-Z0-9])+$" 
+          required="required" 
+          title="Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!"> -->
+      <div class="errMsg">
+        <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+        <div class="errMsg required">Toto pole musí být vyplněno!</div>
+      </div>
+    </div>
+    <div class="inputWrapper">
+      <label for="">Label</label>
+      <input 
+          type="text" 
+          name="wtkAttrLabel" 
+          pattern="^([a-zA-Z0-9])+$" 
+          required="required" 
+          title="Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!">
+      <div class="errMsg">
+        <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+        <div class="errMsg required">Toto pole musí být vyplněno!</div>
+      </div>
+    </div>
+    <div class="inputWrapper">
+      <label for="">Name</label>
+      <input 
+          type="text" 
+          name="wtkAttrName" 
+          pattern="^([a-zA-Z0-9])+$" 
+          required="required" 
+          title="Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!">
+      <div class="errMsg">
+        <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+        <div class="errMsg required">Toto pole musí být vyplněno!</div>
+      </div>
+    </div>
+
+
+    <p>Atributy pro content</p>
+    <input type="button" value="PŘIDAT ATRIBUT" id="wtk__addAttributeToContenBtn">
+    <div class="inputWrapper">
+      <label for="">Attribute name</label>
+      <input 
+          type="text" 
+          name="wtkAttributes" 
+          pattern="^([a-zA-Z0-9])+$" 
+          required="required" 
+          title="Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!">
+      <div class="errMsg">
+        <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+        <div class="errMsg required">Toto pole musí být vyplněno!</div>
+      </div>
+    </div>
+    <div class="inputWrapper">
+      <label for="">Název</label>
+      <textarea 
+          type="text" 
+          name="wtkDesc" 
+          pattern="^([a-zA-Z0-9])+$" 
+          required="required" 
+          title="Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!"></textarea>
+      <div class="errMsg">
+        <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+        <div class="errMsg required">Toto pole musí být vyplněno!</div>
+      </div>
+    </div>
+    <input type="submit" value="uložit">
+  </form>

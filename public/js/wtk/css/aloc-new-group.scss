@@ -1,0 +1,25 @@
+:host{
+  @import 'brand';
+  @import 'basic';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background-color: rgba($colD, 0.5);
+  // padding: 150px;
+  padding-top: 16px;
+  @include flex();
+  justify-content: center;
+  form{
+  @include whiteframe-1dp();
+    // @include whiteframe1();
+    background-color: white;
+    padding: 16px;
+    border-radius: 5px;
+  }
+  .wtkNewAttribute{
+    margin-top: 16px;
+  }
+}

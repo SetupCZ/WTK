@@ -1,0 +1,33 @@
+:host{
+  @import 'brand';
+  display: block;
+  white-space: nowrap;
+  position: relative;
+  margin-top: 12px;
+  &:before{
+    content: "Group";
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    font-size: 8px;
+    color: grey;
+    display: block;
+  }
+  button{
+    background-color: $colS;
+    border:none;
+    cursor: pointer;
+    padding: 6px; 
+    &:hover{
+      background-color: rgba(0,0,0,0.3);
+    }
+    &:first-of-type{
+      border-top-left-radius: 2px;
+      border-bottom-left-radius: 2px;
+    }
+    &:last-of-type{
+      border-top-right-radius: 2px;
+      border-bottom-right-radius: 2px;
+    }
+  }
+}

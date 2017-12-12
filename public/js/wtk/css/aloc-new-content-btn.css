@@ -1,0 +1,44 @@
+:host {
+  display: block;
+  white-space: nowrap;
+  position: relative;
+  margin-top: 12px; }
+  :host .wtk-hidden {
+    display: none; }
+  :host wtk-content-item {
+    display: block;
+    margin-top: 50px; }
+  :host .wtkCloseBtn {
+    display: block;
+    margin-left: auto; }
+  :host .wtkFullScreen {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: rgba(33, 33, 33, 0.5); }
+    :host .wtkFullScreen > div {
+      max-width: 70%;
+      margin: auto; }
+  :host:before {
+    content: "New Content";
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    font-size: 8px;
+    color: grey;
+    display: block; }
+  :host button {
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    background-color: #104d92; }
+    :host button:hover {
+      background-color: rgba(0, 0, 0, 0.3); }
+    :host button:first-of-type {
+      border-top-left-radius: 2px;
+      border-bottom-left-radius: 2px; }
+    :host button:last-of-type {
+      border-top-right-radius: 2px;
+      border-bottom-right-radius: 2px; }

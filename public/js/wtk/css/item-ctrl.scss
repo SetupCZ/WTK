@@ -1,0 +1,27 @@
+:host{
+  @import 'brand';
+  display: inline-block;
+  background-color: darken($colL, 10);
+  border-radius: 2px;
+  white-space: nowrap;
+  position: relative;
+  margin-top: 12px;
+  &:before{
+    content: "Item Controller";
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    font-size: 8px;
+    color: grey;
+    display: block;
+  }
+  button{
+    background:transparent;
+    border:none;
+    cursor: pointer;
+    padding: 6px; 
+    &:hover{
+      background-color: rgba(0,0,0,0.3);
+    }
+  }
+}

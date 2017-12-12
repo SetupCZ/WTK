@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>wtk-admin</title>
+  <link rel='stylesheet' href='/js/wtk/css/wtk.css' />
+  <style>
+    body{
+    }
+    #userPswdFormWrapper{
+      display: none;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      padding: 150px 0;
+      background-color: rgba(21,21,21,0.5);
+      z-index: 9999;
+    }
+    #userPswdFormWrapper form {
+      max-width: 600px;
+      margin: auto;
+    }
+  </style>
+</head>
+<body class="wtk-bg-colP">
+<div class="wtk-container wtk-margin-y-3x wtk-padding-2x wtk-bg-colL wtk-whiteframe-1dp">
+    
+    <h1 class="wtk-headline">Nastavení účtu</h1>
+    <div class="underline mad-bg-colP"></div>
+    <div class="wtk-margin-y wtk-align-between-start">
+      <form action="" id="userInfoForm">
+        <div class="inputWrapper">
+          <label for="">E-mail</label>
+          <input 
+              type="mail" 
+              name="wtkLoginName" 
+              value="jarkovsky.d@poskytuj.cz" 
+              required="">
+          <div class="errMsg">
+            <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+            <div class="errMsg required">Toto pole musí být vyplněno!</div>
+          </div>
+        </div>
+        <input type="submit" name="" value="ULOŽIT">
+      </form>
+      <button type="button" id="changePswd">ZMĚNIT HESLO</button>
+    </div>
+    <div id="userPswdFormWrapper" class="">
+      <form action="" id="userPswdForm" class="wtk-whiteframe-2dp wtk-bg-colL wtk-padding-2x">
+        <h2 class="wtk-title wtk-margin-bottom ">Změna hesla</h2>
+        <div class="inputWrapper">
+          <label for="">Staré Heslo</label>
+          <input 
+              type="password" 
+              name="wtkLoginPswdOld" 
+              value="Dada_144_1993" 
+              required="">
+          <div class="errMsg">
+            <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+            <div class="errMsg required">Toto pole musí být vyplněno!</div>
+          </div>
+        </div>
+        <div class="inputWrapper">
+          <label for="">Nové Heslo</label>
+          <input 
+              type="password" 
+              name="wtkLoginPswdNew" 
+              value="Dada_144_1993" 
+              required="">
+          <div class="errMsg">
+            <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+            <div class="errMsg required">Toto pole musí být vyplněno!</div>
+          </div>
+        </div>
+        <div class="inputWrapper">
+          <label for="">Nové Heslo znovu</label>
+          <input 
+              type="password" 
+              name="wtkLoginPswdNewAgain" 
+              value="Dada_144_1993" 
+              required="">
+          <div class="errMsg">
+            <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+            <div class="errMsg required">Toto pole musí být vyplněno!</div>
+          </div>
+        </div>
+        <div class="wtk-align-end-end">
+          <button type="button" id="userPswdCloseBtn" class="wtk-margin-right-2x">ZAVŘÍT</button>
+          <input type="submit" name="" class="wtk-bg-colP wtk-colL" value="ULOŽIT">
+        </div>
+      </form>
+    </div>
+    <div class="wtk-margin-y ">
+      <form action="" id="secQForm">
+        <h2 class="wtk-title">Bezpečnostní otázky</h2>
+        <div class="wtk-col-5">
+          <div class="inputWrapper">
+            <label for="">1. Otázka</label>
+            <select 
+                name="wtkSecQ1" 
+                required="">
+              <option vallue="null">-----</option>
+              
+            </select>
+
+            <div class="errMsg">
+              <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+              <div class="errMsg required">Toto pole musí být vyplněno!</div>
+            </div>
+          </div>
+          <div class="inputWrapper">
+            <label for="">1. Odpověď</label>
+            <input
+                type="text"
+                name="wtkSecA1" 
+                required="">
+
+            <div class="errMsg">
+              <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+              <div class="errMsg required">Toto pole musí být vyplněno!</div>
+            </div>
+          </div>
+          <div class="inputWrapper">
+            <label for="">2. Otázka</label>
+            <select 
+                name="wtkSecQ2" 
+                required="">
+                <option value="null">-----</option>
+            </select>
+
+            <div class="errMsg">
+              <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+              <div class="errMsg required">Toto pole musí být vyplněno!</div>
+            </div>
+          </div>
+          <div class="inputWrapper">
+            <label for="">2. Odpověď</label>
+            <input
+                type="text"
+                name="wtkSecA2" 
+                required="">
+
+            <div class="errMsg">
+              <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+              <div class="errMsg required">Toto pole musí být vyplněno!</div>
+            </div>
+          </div>
+        </div>
+        <div class="wtk-align-between-start">
+          <!-- <div class="inputWrapper">
+            <label for="">2. Otázka</label>
+            <select 
+                name="wtkSecQ2" 
+                required="">
+                <option value="null">-----</option>
+            </select>
+
+            <div class="errMsg">
+              <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+              <div class="errMsg required">Toto pole musí být vyplněno!</div>
+            </div>
+          </div>
+          <div class="inputWrapper">
+            <label for="">2. Odpověď</label>
+            <input
+                type="text"
+                name="wtkSecA2" 
+                required="">
+
+            <div class="errMsg">
+              <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+              <div class="errMsg required">Toto pole musí být vyplněno!</div>
+            </div>
+          </div> -->
+        </div>
+        <input type="submit" name="" value="ULOŽIT">
+      </form>
+    </div>
+
+</div>
+<script src="/js/wtk/webcomponentsjs-master/webcomponents-sd-ce.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"></script>
+<script src="/js/wtk/wtk-admin.js"></script>
+</body>
+</html>

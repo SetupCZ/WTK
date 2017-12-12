@@ -1,0 +1,27 @@
+{
+  "metaData":{
+    "user":{
+      "secQ":[
+        {"val":"Jaká je vaše oblíbená barva?", "text":"Jaká je vaše oblíbená barva?"},
+        {"val":"Jak se jmenoval váš první mazlíček?", "text":"Jak se jmenoval váš první mazlíček?"},
+        {"val":"Jméno vašeho nejlepšího přítele?", "text":"Jméno vašeho nejlepšího přítele?"}
+      ]
+
+
+    },
+    "general":{
+
+    },
+    "facebook":{
+      "locale":"cs_CZ",
+      "localeAlternate":[
+        "cz_CZ",
+        "en_US"
+      ],
+      "sitename":"NET-KOVO s.r.o."
+    },
+    "twitter":{
+      "site":""
+    }
+  }
+}

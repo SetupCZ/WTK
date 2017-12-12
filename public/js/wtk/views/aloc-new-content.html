@@ -1,0 +1,73 @@
+  <!-- .wtk_alocNewContentWrapper is defined in wtk-new-content.js-->
+    
+  <form action="" class="wtk-whiteframe-1dp">
+    <button type="button" class="icon-button wtkCloseBtn" id="wtk__closeAlocNewContentBtn">x</button>
+    <h1 class="wtk-headline wtk-margin-bottom">Vytvořit nový příspěvek</h1>
+    <div class="wtkMetaList wtk-layout wtk-align-between-start">
+      <div class="wtk-full-shrink">
+        <!-- Title -->
+        <div class="inputWrapper">
+          <label for="">Title</label>
+          <input 
+              type="text" 
+              name="wtkMetaTitle" 
+              pattern="^([a-zA-ZěščřžýáíéúůďťňóĚŠČŘŽÝÁÍÉŮÚŤĎŇ ])+$" 
+              required="required" 
+              title="Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!">
+          <div class="errMsg">
+            <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+            <div class="errMsg required">Toto pole musí být vyplněno!</div>
+          </div>
+        </div>
+        <!-- Author -->
+        <div class="inputWrapper">
+          <label for="">Autor</label>
+          <input 
+              type="text" 
+              name="wtkMetaAuthor" 
+              pattern="^([a-zA-ZěščřžýáíéúůďťňóĚŠČŘŽÝÁÍÉŮÚŤĎŇ ])+$" 
+              title="Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!">
+          <div class="errMsg">
+            <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+            <div class="errMsg required">Toto pole musí být vyplněno!</div>
+          </div>
+        </div>
+        <!-- Desc -->
+        <div class="inputWrapper">
+          <label for="">Popisek</label>
+              <!-- pattern="/^([a-zA-ZěščřžýáíéúůďťňóĚŠČŘŽÝÁÍÉŮÚŤĎŇ,.-\'_!?\(\) ])+$/"  -->
+          <textarea 
+              type="text" 
+              name="wtkMetaDescription" 
+              required="required" 
+              title="Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!"></textarea>
+          <div class="errMsg">
+            <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+            <div class="errMsg required">Toto pole musí být vyplněno!</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    <div id="wtk__imgItemCtrl__upload">
+      <div id="uploader" >
+        click here or drag here your images for preview.
+      </div>
+      <img class="imgUploader" src=""/>
+      <p id="imgName"></p>
+      <div class="wtk-layout wtk-align-center-center wtk-relative">
+        <label for="img" class="wtk-fileInput">
+          <input type="file" name="img"  id="wtk__imgItemCtrl__fileInput" />
+          <span>Vyberte soubor</span>
+        </label>
+      </div>
+    </div>
+    <!-- <wtk-img-item-controls>
+      <button type="submit" id="wtk__imgItemCtrl__save">
+        <img src="" alt="">
+        save
+      </button>
+      
+    </wtk-img-item-controls> -->
+    <input type="submit" value="uložit">
+  </form>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/css/style.css' />
+    <link rel='stylesheet' href='/js/wtk/css/wtk.css' />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <h1><%= title %></h1>
+    <p>Welcome to <%= title %></p>
+    <!-- <wtk wtk-group="sluzby"></wtk> -->
+    <!-- <wtk-content wtk-name="ola"></wtk-content> -->
+    <div style="display: flex; width:100%;">
+      
+      
+      
+    </div>
+    <div style="display: flex; width:100%;">
+      <!-- <wtk-content wtk-name="test3"></wtk-content> -->
+      <!-- <wtk-content wtk-name="test2" style="margin: 0 100px;"></wtk-content> -->
+      <!-- <wtk-content wtk-name="test6"></wtk-content> -->
+      <div style="margin: 0 50px;width:20%; border-right: 1px solid grey;">
+        <wtk-search wtk-names="test201" wtk-options="wtkCont" style=""></wtk-search>
+        <!-- <wtk-content-meta wtk-name="test6" style="margin: 0 10px;">
+          <h2 wtk-data="wtkMetaName"></h2>
+          <p wtk-data="wtkMetaTitle"></p>
+          <p wtk-data="wtkMetaDescription"></p>
+        </wtk-content-meta> -->
+        <!-- <wtk-content wtk-name="test201"></wtk-content> -->
+        <!-- <wtk-content wtk-name="test301"></wtk-content> -->
+        <wtk-content-meta wtk-name="test301">
+          <p wtk-data="wtkMetaTitle"></p>
+          <img src="" wtk-data="wtkMetaThumbnail" alt="">
+        </wtk-content-meta>
+      </div>
+      <div  style="margin: 0 50px;width:40%; border-right: 1px solid grey;">
+        <wtk-search wtk-names="test501" wtk-options="wtkMetaTitle"></wtk-search>
+        <wtk-group-meta wtk-name="test501" class="wtk-align-between-start wtk-wrap">
+          <div>
+            
+            <wtk-content-meta>
+              <a href="/produkt/" wtk-href="wtkMetaName" wtk-data="wtkMetaTitle"></a>
+              <p class="mad-title" wtk-data="wtkMetaTitle"></p>
+              <p>----------------------------------------------</p>
+            </wtk-content-meta>
+          </div>
+        </wtk-group-meta>
+      </div>
+      <div  style="margin: 0 50px;width:30%; ">
+        <wtk-search wtk-names="test7" wtk-options="wtkMetaTitle,wtkCont"></wtk-search>
+        <wtk-content wtk-name="test700"></wtk-content>
+        <!-- <wtk-group-meta wtk-name="test7">
+          <b><p wtk-data="wtkMetaTitle"></p></b>
+          <p wtk-data="wtkMetaDescription"></p>
+          <p wtk-data="wtkMetaName"></p>
+          <p wtk-data="mail"></p>
+          <p wtk-data="textos"></p>
+        </wtk-group-meta> -->
+      </div>
+      
+    </div>
+    <script src="js/wtk/webcomponents-sd-ce.js"></script>
+    <script src="js/wtk/wtk-content-init.js"></script>
+  </body>
+</html>

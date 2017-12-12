@@ -503,8 +503,9 @@ class wtkContentElem extends HTMLElement{
       // this.target.appendChild(wtkContItem)
     })
   }
-  _getContentData(name){
-    if (name=="") {
+  async _getContentData(name){
+    // get new content if name is not set and user is logged in
+    if (name == "" && this.user) {
       this.wtkClass._fetchWtkDep(
           `${this.wtkClass.base}/js/wtk-new-content.js`, 
           'wtk-new-content', 
@@ -512,21 +513,44 @@ class wtkContentElem extends HTMLElement{
       return
     }
     // console.log(this.wtkGroupName)
-    let path=this.wtkGroupName==null ? `/wtk/contents/${name}/items` : `/wtk/groups/${name}/items`
+    const path = this.wtkGroupName==null ? 
+        `/wtk/contents/${name}/items` : 
+        `/wtk/groups/${name}/items`
+        
+    const response = await fetch(path).catch((err) => {
+      this.wtkClass.toast(err)
+      console.log(err)
+    })
+    
+    if (response.status == 204 && this.user) {
+      this.wtkClass._fetchWtkDep(
+          `${this.wtkClass.base}/js/wtk-new-content.js`,
+          'wtk-new-content',
+          this.target) 
+      return
+    }
+    if (response.status == 204) return //TODO: set function to show empty 
+    
+    const cj = await response.json()
     fetch(path)
     .then((data) => {
       // is loged in
       // console.log(data.status)
+      console.log(data.status);
+      console.log(this.user);
       if (data.status==204 && this.user) {  
         this.wtkClass._fetchWtkDep(
           `${this.wtkClass.base}/js/wtk-new-content.js`, 
           'wtk-new-content', 
           this.target) 
       }
+      else if (data.ok && data.status!=204) {
+        return data.json()
+      }
       else { 
         // is loged in and has data
-        // console.log(data)
-        return data.json()          
+        console.log(data)
+        // return data.json()          
       }
     })
     .then((cj) => {

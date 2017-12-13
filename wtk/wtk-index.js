@@ -104,12 +104,14 @@ module.exports={
 
   getAlocData:function() {
     return new Promise((resolve, reject) => {
-      if (alocDataGlobal.alocData != undefined) { return resolve(alocDataGlobal) }
+      console.log('inGetALocData');
+      if (alocDataGlobal.alocData != undefined) { console.log('cunt');return resolve(alocDataGlobal) }
       var filePath=path.resolve(__dirname, './alocData.json')
       fs.readFile(filePath, {encoding: 'utf8'}, function(err, data) {
-        if (err) { return reject(err); }
-        if (data==="") { return resolve(alocDataGlobal) }
+        if (err) { console.log('err');return reject(err); }
+        if (data==="") { console.log('sc');return resolve(alocDataGlobal) }
         else { 
+          console.log('he');
           alocDataGlobal=JSON.parse(data); 
           return resolve(alocDataGlobal) };
       });
@@ -122,7 +124,8 @@ module.exports={
         if (alocDataGlobal.alocData.length==0) { reject(null) }
         let alocDataByName=returnAlocDataByName(alocDataGlobal, wtkName);
         if (!alocDataByName) {
-          if (newCont) { return resolve(null) }
+          if (newCont) { console.log('gg');return resolve(null) }
+          console.log('1');
           return reject(null) 
         }
         return resolve(alocDataByName)
@@ -133,8 +136,9 @@ module.exports={
       fs.readFile(filePath, {encoding: 'utf8'}, function(err, data) {
         if (err) { return reject(err); }
         else{ 
+          console.log('2');
           alocDataGlobal=JSON.parse(data);
-          if (alocDataGlobal.alocData.length==0) { return reject(null) }
+          if (alocDataGlobal.alocData.length==0) { console.log('3');return resolve(null) }
           let alocDataByName=returnAlocDataByName(alocDataGlobal, wtkName)
           if (!alocDataByName) { 
             if (newCont) { return resolve(null) }
@@ -642,8 +646,8 @@ module.exports={
       //////////////////////////////
       //////////////////////////////
       //////////////////////////////
-      console.log(data)
-      console.log(img)
+      // console.log(data)
+      // console.log(img)
       const wtkNameReg = nameGlobalReg
       const wtkMetaTitleReg = textGlobalReg
       const wtkMetaAuthorReg = textGlobalReg
@@ -659,6 +663,7 @@ module.exports={
       // img regex
       const imgNameReg = new RegExp(/^([a-zA-Z0-9])+(\.(jpg|png|JPG|PNG))$/)
       const imgPathReg = pathGlobalReg
+      const wtkMetaThumbnailReg = pathGlobalReg
 
       data.wtkMetaName = xss(data.wtkMetaName, filterEverything)
       data.wtkMetaTitle = xss(data.wtkMetaTitle, filterEverything)
@@ -668,6 +673,7 @@ module.exports={
       data.wtkMetaOgLocale = xss(data.wtkMetaOgLocale, filterEverything)
       data.wtkMetaOgSitename = xss(data.wtkMetaOgSitename, filterEverything)
       data.wtkMetaTwitterSite = xss(data.wtkMetaTwitterSite, filterEverything)
+      data.wtkMetaThumbnail = xss(data.wtkMetaThumbnail, filterEverything)
 
       if ( !wtkNameReg.test(data.wtkMetaName) ) return reject("WTK NAME is wrong!")
       if ( !wtkMetaTitleReg.test(data.wtkMetaTitle) ) return reject("Content TITLE is wrong!")
@@ -677,17 +683,20 @@ module.exports={
       if ( !wtkMetaOgLocaleReg.test(data.wtkMetaOgLocale) ) return reject("Content og:LOCALE is wrong!")
       if ( !wtkMetaOgSitenameReg.test(data.wtkMetaOgSitename) ) return reject("Content og:SITE NAME is wrong!")
       if ( !wtkMetaTwitterSiteReg.test(data.wtkMetaTwitterSite) ) return reject("Content twitter:SITE is wrong!")
+      if (!wtkMetaThumbnailReg.test(data.wtkMetaThumbnail)) return reject("Content twitter:SITE is wrong!")
 
       // test img
-      img.originalname = xss(img.originalname, filterEverything)
-      img.path = xss(img.path, filterEverything)
-
-      if ( !imgNameReg.test(img.originalname) ) return reject("IMG NAME is wrong!")
-      if ( !imgPathReg.test(img.path) ) return reject("IMG PATH is wrong!")
-      if ( img.size > settings.uploadMaxSize ) return reject("IMG SIZE is too big!")
-
-
-
+      if (img){
+        img.originalname = xss(img.originalname, filterEverything)
+        img.path = xss(img.path, filterEverything)
+        
+        if ( !imgNameReg.test(img.originalname) ) return reject("IMG NAME is wrong!")
+        if ( !imgPathReg.test(img.path) ) return reject("IMG PATH is wrong!")
+        if ( img.size > settings.uploadMaxSize ) return reject("IMG SIZE is too big!")
+      }
+        
+        
+        
       let groupName=data.wtkMetaName.split('/contents/')[0] 
       if (data.groupAttrs) {
         this.getAlocDataByName(groupName)
@@ -725,7 +734,7 @@ module.exports={
             if (attrMetaReq=="required" && valAttr.wtkMetaValue!="" && !attrValueReg.test(valAttr.wtkMetaValue)) return reject(`Attribute ${attrMetaTitle} is wrong!`)
             if (attrMetaReq=="required" && data[valAttr.wtkMetaName]!="" && !attrValueReg.test(data[valAttr.wtkMetaName])) return reject(`Attribute ${attrMetaTitle} is wrong!`)
           })
-
+          console.log('validateC ok');
           return resolve(data)
         })
         .catch((err) => {
@@ -733,6 +742,7 @@ module.exports={
           return reject(err)
         });
       }
+      return resolve(data)
 
 
     });

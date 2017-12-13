@@ -1,1 +1,1 @@
-{"jarkovsky.d@poskytuj.cz":{"pswd":"161c4585bed45e0c8988ba57a1d8e8f6","salt":"3cbbb240d115f0bb2a2683e1f2ee6dc5fa5aae0aeb30aa983b5b8dbd199bac32","secQ1":"Jaká je vaše oblíbená barva?","secA1":"1","secQ2":"Jak se jmenoval váš první mazlíček?","secA2":"2"}}
+{"jarkovsky.d@poskytuj.cz":{"id":"jarkovsky.d@poskytuj.cz","pswd":"161c4585bed45e0c8988ba57a1d8e8f6","salt":"3cbbb240d115f0bb2a2683e1f2ee6dc5fa5aae0aeb30aa983b5b8dbd199bac32","secQ1":"Jaká je vaše oblíbená barva?","secA1":"1","secQ2":"Jak se jmenoval váš první mazlíček?","secA2":"2", "refreshToken":""}}

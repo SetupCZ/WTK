@@ -8,7 +8,12 @@ var debug = require('debug')('app:server');
 var http = require('http');
 var expressJwt=require('express-jwt');
 var jwt=require('jsonwebtoken');
+// const cors = require('cors');
 
+const { refreshTokens, getTokens, setTokens } = require('./authentication');
+
+process.env.SECRET = "secret"
+process.env.SECRET2 = "secret"
 
 var app = express();
 
@@ -20,9 +25,10 @@ app.set('view engine', 'ejs');
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+// app.use(cors('*')) // include before other routes
 
 // routes
 var index = require('./routes/index');
@@ -33,11 +39,32 @@ app.use('/users', users);
 
 // wtk
 // wtk routes
-var wtk = require('./wtk/wtk-index.js');
-var wtkInit = require('./routes/wtk-init');
-var wtkAuth = require('./routes/wtk-auth');
+const wtk = require('./wtk/wtk-index.js');
+const wtkInit = require('./routes/wtk-init');
+const wtkAuth = require('./routes/wtk-auth');
 app.use('/wtk', wtkInit);
-// app.use('/wtk/auth', expressJwt({secret: '123'}));
+app.use('/wtk/auth', async (req, res, next) => {
+  const [accessToken, refreshToken] = getTokens(req)
+  if (!accessToken) return next()
+  try {
+    const { user } = jwt.verify(accessToken, process.env.SECRET)
+    req.user = user
+    console.log('inTokenVerified');
+
+  } catch (err) {
+    console.log('inError');
+    if (err.name === "TokenExpiredError" && err.message === "jwt expired") {
+      console.log('inTokenExpirated');
+      const [newAccessToken, newRefreshToken, user] = await refreshTokens(accessToken, refreshToken, process.env.SECRET, process.env.SECRET2)
+      if (newAccessToken && newRefreshToken) {
+        console.log('inNewTokens');
+        setTokens(newAccessToken, newRefreshToken, user.id, res)
+        req.user = user
+      }
+    }
+  }
+  next()
+});
 app.use('/wtk/auth', wtkAuth);
 
 
@@ -97,6 +124,7 @@ function onError(error) {
     : 'Port ' + port;
 
   // handle specific listen errors with friendly messages
+  console.log(error);
   switch (error.code) {
     case 'EACCES':
       console.error(bind + ' requires elevated privileges');

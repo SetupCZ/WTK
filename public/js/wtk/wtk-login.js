@@ -85,7 +85,7 @@ class wtkLogin {
         myHeaders.append('Content-Type', 'application/json');
         // myHeaders.append('Content-Type', 'form-data; ');
         console.log(JSON.stringify(body))
-    fetch(`/wtk/wtk-login`,{method:'POST', body: JSON.stringify(body), headers:myHeaders})
+    fetch(`/wtk/wtk-login`,{method:'POST', body: JSON.stringify(body), headers:myHeaders, credentials: 'same-origin'})
     .then((data) => {
       // console.log(data.json())
       if (!data.ok) { throw Error(data.statusText); }

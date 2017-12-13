@@ -30,7 +30,10 @@
   justify-content: center;
   
   form{
-  @include whiteframe-1dp();
+    @include whiteframe-1dp();
+    max-height: 80%;
+    overflow-y: auto;
+    overflow-x: hidden;
     // @include whiteframe1();
     margin: auto;
     background-color: white;

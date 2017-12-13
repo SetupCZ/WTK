@@ -58,20 +58,11 @@ class wtk {
     }
     return false;
   }
-  getGeneralMetadata(){
-    return new Promise((resolve, reject) => {
-      fetch(`${this.base}/wtkSettings.json`)
-      .then((data) => {
-        return data.json()
-      })
-      .then((settings) => {
-        console.log(settings)
-        return resolve(settings)
-      })
-      .catch((err) => {
-        return reject(err)
-      })
-    });
+  async getGeneralMetadata(){
+    const path = `${this.base}/wtkSettings.json`
+    const response = await fetch(path).catch(_ => {})
+    if (!response.ok) return this.toast(response.statusText)
+    return await response.json()
   }
   fireEvent(customEvt, element){
     let event; // The custom event that will be created
@@ -497,7 +488,7 @@ class wtkContentElem extends HTMLElement{
   }
   async _getContentData(name){
     // get new content if name is not set and user is logged in
-    if (this.wtkName && this.wtkClass.user) {
+    if (!this.wtkName && this.wtkClass.user) {
       this.wtkClass._fetchWtkDep(
           `${this.wtkClass.base}/js/wtk-new-content.js`, 
           'wtk-new-content', 
@@ -641,7 +632,7 @@ class wtkContentMetaElem extends  HTMLElement{
     });
   }
   async _getContentData(name){
-    if (this.wtkName && this.wtkClass.user) {
+    if (!this.wtkName && this.wtkClass.user) {
       this.wtkClass._fetchWtkDep(
         `${this.wtkClass.base}/js/wtk-new-content.js`, 
         'wtk-new-content', 
@@ -699,7 +690,7 @@ class wtkGroupElem extends HTMLElement{
     this._getGroupData(this.wtkName)
   }
   async _getGroupData(wtkName){
-    if (this.wtkName && this.wtkClass.user) {
+    if (!this.wtkName && this.wtkClass.user) {
       this.wtkClass._fetchWtkDep(
         `${this.wtkClass.base}/js/wtk-new-group.js`,
         'wtk-new-group',
@@ -771,7 +762,7 @@ class wtkGroupMetaElem extends HTMLElement{
     this._getGroupData(this.wtkName)
   }
   async _getGroupData(wtkName){
-    if (this.wtkName && this.wtkClass.user) {
+    if (!this.wtkName && this.wtkClass.user) {
       this.wtkClass._fetchWtkDep(
         `${this.wtkClass.base}/js/wtk-new-group.js`,
         'wtk-new-group',

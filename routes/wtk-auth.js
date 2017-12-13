@@ -4,21 +4,19 @@ let serverSettings = require('../wtk/serverSettings.json');
 let wtk = require('../wtk/wtk-ctrl.js');
 let wtkIndex = require('../wtk/wtk-index.js');
 let path = require('path');
-
+let imgDestination = path.resolve(__dirname, serverSettings.galeryPath)
 let multer  = require('multer')
 let storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    console.log(req.body)
     let path1=path.resolve(__dirname, serverSettings.galeryPath)
-    console.log(path1)
+    // console.log('file destination', path1)
     cb(null, path1)
   },
   filename: function (req, file, cb) {
-    console.log(file)
+    // console.log(file);
     let fileExt=file.mimetype.split('/')
         fileExt=fileExt[1]
     let fileName=new Date().getTime()
-    console.log(fileName+fileExt)
     cb(null, file.originalname)
   }
 })
@@ -395,29 +393,13 @@ router.delete('/groups/:name/contents/:contName/items/:id', function(req, res, n
 router.post('/contents', upload.single('img'), function(req, res, next) {
   let img=req.file
   let data=req.body
-      data=JSON.parse(data.bodyData) 
-  
-      console.log('***************************************')
-      console.log('***************************************')
-      console.log('***************************************')
-      wtkIndex.validateC(data, img).then((data) => {
-        console.log('validatedC Data: ')
-        console.log(data)
-      })
-      .catch((err) => {
-        console.log("err",err)
-      });
-      
-      return
-  // validate name
-  // console.log(data) 
-
-  // return
+  if (img) return res.status(200).send({wtkMetaThumbnail:`${imgDestination}/${img.originalname}`})
   wtk.addContent(data, img)
   .then((data) => {
     return res.status(200).send(data)
   })
   .catch((err) => {
+    console.log(err);
     if (err==null) { return res.status(204).send(data) }
     return res.status(400).send(err)
   });

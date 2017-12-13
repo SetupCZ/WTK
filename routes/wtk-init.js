@@ -6,6 +6,7 @@ var CryptoJS = require("crypto-js")
 var userSettings = require("../wtk/userSettings.json")
 var serverSettings = require("../wtk/serverSettings.json")
 var wtkIndex = require('../wtk/wtk-index.js');
+const { generateTokens, setTokens, getUser } = require('../authentication');
 
 // var async = require('async');
 // var _ = require('underscore');
@@ -21,10 +22,10 @@ router.get('/wtk-admin', function(req, res, next) {
   res.render('wtk-admin', { title: 'WTK admin' });
 });
 
-router.post('/wtk-login', function(req, res, next) {
+router.post('/wtk-login', async function(req, res, next) {
   let data=req.body;
   wtkIndex.validateLogin(data)
-  .then((validatedData) => {
+  .then(async (validatedData) => {
 
     let user=userSettings[validatedData.wtkLoginName]
     if (user==undefined) { return res.status(401).send('Wrong user or password.') }
@@ -37,22 +38,27 @@ router.post('/wtk-login', function(req, res, next) {
     //if invalid, return 401
     if (saltedPswd !== userPswd) { return res.status(401).send('Wrong user or password.') }
 
-    let userInfo = {
-      first_name: 'John',
-      last_name: 'Doe',
-      email: validatedData.wtkLoginName,
-      id_u: 0
-    };
-    let userForWeb={
-      email:validatedData.wtkLoginName,
-      secQ1:userSettings[validatedData.wtkLoginName].secQ1,
-      secQ2:userSettings[validatedData.wtkLoginName].secQ2,
-    }
+    // let userInfo = {
+    //   first_name: 'John',
+    //   last_name: 'Doe',
+    //   email: validatedData.wtkLoginName,
+    //   id_u: 0
+    // };
+    // let userForWeb={
+    //   email:validatedData.wtkLoginName,
+    //   secQ1:userSettings[validatedData.wtkLoginName].secQ1,
+    //   secQ2:userSettings[validatedData.wtkLoginName].secQ2,
+    // }
+    // const user = getUser(validatedData.wtkLoginName)
 
+    const refreshSecret = saltedPswd + process.env.SECRET2
+
+    const [accessToken, refreshToken] = await generateTokens(user, process.env.SECRET, refreshSecret)
+    setTokens(accessToken, refreshToken, validatedData.wtkLoginName, res)
     //jwtPswd==/wtk/serverSettings.json
-    let token = jwt.sign(userInfo, serverSettings.jwtPswd);
+    // let token = jwt.sign(userInfo, serverSettings.jwtPswd);
     
-    return res.status(200).send({token: token, userForWeb:userForWeb});
+    return res.status(200).send()//.send({token: token, userForWeb:userForWeb});
   })
   .catch((err) => {
     console.log(err)

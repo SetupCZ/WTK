@@ -11,31 +11,25 @@ class wtkNewContentCtrl extends HTMLElement{
    
     this._newContCtrlInit()
   }
-  _newContCtrlInit(){
+  async _newContCtrlInit(){
     // make shadow root
     this.target = this.attachShadow({mode: 'open'});
     // css
-    let css=document.createElement('style')
-    fetch(`${this.wtkClass.base}/css/aloc-new-content-btn.css`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      css.innerHTML = data
-      this.target.insertBefore( css, this.target.firstChild )
-    })
-    .catch((err) => {
-      console.log(err)
-      alert("Ups! Nepodařilo se nahrát styly pro tlacitko. Zkuste aktualizovat stránku.")
-    })
+    const path = `${this.wtkClass.base}/css/aloc-new-content-btn.css`
+    const response = await fetch(path).catch(_ => {})
+    if (!response.ok) return this.wtkClass.toast("Ups! Nepodařilo se nahrát styly pro tlacitko. Zkuste aktualizovat stránku.")
 
+    const css = document.createElement('style')
+          css.innerHTML = await response.text()
+    this.target.insertBefore(css, this.target.firstChild)
+    
     // plus icon
-    let plusIcon=document.createElement('img')
-        plusIcon.src=`${this.wtkClass.base}/icons/plus.svg`
+    const plusIcon=document.createElement('img')
+          plusIcon.src=`${this.wtkClass.base}/icons/plus.svg`
     // plus button
-    let plusButton=document.createElement('button')
-        plusButton.appendChild(plusIcon)
-        plusButton.addEventListener('click', this._newPlusClick.bind(this))
+    const plusButton=document.createElement('button')
+          plusButton.appendChild(plusIcon)
+          plusButton.addEventListener('click', this._newPlusClick.bind(this))
     this.target.appendChild(plusButton)
   }
   _newPlusClick(evt){
@@ -61,64 +55,52 @@ class wtkAlocNewContent extends HTMLElement {
   connectedCallback(){
     this.wtkName=this.getAttribute("wtk-name")
     this.wtkContName=this.getAttribute("wtk-cont-name")
-    console.log(this.wtkContName)
     this.wtkGroupName=this.getAttribute("wtk-ingroup")
     this.editContent=this.wtkContName!=null ? true : false  
     this.groupAttrs=[]
-    this.newContentWrapper=document.createElement('div')
-    this.newContentWrapper.classList.add('wtk_alocNewContentWrapper')
+    
     this._alocNewContInit()
   }
-  _alocNewContInit(){
+  async _alocNewContInit(){
     // make shadow root
     this.target=this.attachShadow({mode: 'open'});
+    const htmlPath = `${this.wtkClass.base}/views/aloc-new-content.html`
+    const cssPath = `${this.wtkClass.base}/css/aloc-new-content.css`
 
-    fetch(`${this.wtkClass.base}/views/aloc-new-content.html`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      this.newContentWrapper.innerHTML=data
-      this.target.appendChild(this.newContentWrapper)
+    const htmlPromise =  fetch(htmlPath).catch(_ => {})
+    const cssPromise =  fetch(cssPath).catch(_ => {})
+    const [htmlResponse, cssResponse] = await Promise.all([htmlPromise, cssPromise])
+    
+    if (!htmlResponse.ok || !cssResponse.ok) return this.wtkClass.toast("Ups! Něco se nepovedlo. Zkuste aktualizovat stránku.")
+    
+    // html
+    this.newContentWrapper = document.createElement('div')
+    this.newContentWrapper.classList.add('wtk_alocNewContentWrapper')
+    this.newContentWrapper.innerHTML = await htmlResponse.text()
 
-      let closeAlocNewCont=this.target.querySelector('#wtk__closeAlocNewContentBtn')
+    this.target.appendChild(this.newContentWrapper)
+    const closeAlocNewCont = this.target.querySelector('#wtk__closeAlocNewContentBtn')
           closeAlocNewCont.addEventListener('click', this._closeAlocNewContClick.bind(this))
-      // form
-      this.alocNewContForm=this.target.querySelector('form')
-      this.alocNewContForm.addEventListener('submit', this._submitAlocNewCont.bind(this))
+    this.alocNewContForm = this.target.querySelector('form')
+    this.alocNewContForm.addEventListener('submit', this._submitAlocNewCont.bind(this))
 
-      this._initAttrForCont()
-      this._initThumbnail()
-      this._initEditCont()
+    this._initAttrForCont()
+    this._initThumbnail()
+    this._initEditCont()
+    // // validate input on all elems
+    // let validateClass = new validateInput()
+    // for (let i = 0; i < this.alocNewContForm.elements.length; i++) {
+    //   this.alocNewContForm[i].addEventListener('keyup', validateClass._onKeyUp.bind(validateClass))
+    //   this.alocNewContForm[i].addEventListener('keydown', validateClass._onKeyDown.bind(validateClass))
+    // }
 
-      // validate input on all elems
-      let validateClass = new validateInput()
-      for (let i = 0; i < this.alocNewContForm.elements.length; i++) {
-        this.alocNewContForm[i].addEventListener('keyup', validateClass._onKeyUp.bind(validateClass))
-        this.alocNewContForm[i].addEventListener('keydown', validateClass._onKeyDown.bind(validateClass))
-      }
-
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-    })
     // css
-    let css=document.createElement('style')
-    fetch(`${this.wtkClass.base}/css/aloc-new-content.css`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      css.innerHTML = data
-      this.target.insertBefore( css, this.target.firstChild )
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-    })
+    const css=document.createElement('style')
+          css.innerHTML = await cssResponse.text()
+    this.target.insertBefore(css, this.target.firstChild)
   }
   _initThumbnail(){
     this.imgContUploader=this.target.querySelector('#wtk__imgItemCtrl__upload')
-    console.log(this)
     this.imgContUploader.addEventListener('dragenter', this._dragEnter.bind(this))
     this.imgContUploader.addEventListener('dragover', this._dragOver.bind(this))
     this.imgContUploader.addEventListener('drop', this._drop.bind(this))
@@ -129,85 +111,75 @@ class wtkAlocNewContent extends HTMLElement {
     this.imgContFileInput=this.target.querySelector('#wtk__imgItemCtrl__fileInput')
     this.imgContFileInput.addEventListener('change', this._handleImage.bind(this))
   }
-  _initEditCont(){
+  async _initEditCont(){
     if (!this.editContent) { return }
-    let name=this.wtkContName.split('/')
-        name=name[name.length-1]
-    let path=this.wtkGroupName!=null ? `groups/${this.wtkContName}` : `contents/${this.wtkContName}` 
-    fetch(`${this.wtkClass.apiOpen}/${path}`)
-    .then((data) => {
-      return data.json()
-    })
-    .then((cj) => {
-      this._insertMetaData(cj)
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-    })
+
+    let name = this.wtkContName.split('/')
+        name = name[name.length-1]
+
+    const path = this.wtkGroupName!=null ? 
+        `${this.wtkClass.apiOpen}/groups/${this.wtkContName}`: 
+        `${this.wtkClass.apiOpen}/contents/${this.wtkContName}` 
+    const response = await fetch(path).catch(_ => {})
+
+    if (!response.ok) return this.wtkClass.toast(response.statusText)
+    const cj = await response.json()
+    this._insertMetaData(cj)
   }
   _insertMetaData(cj){
     // console.log(cj)
 
     cj.collection.items.forEach((val, key) => {
       if (val.href=="wtkMetaThumbnail/") {
-        console.log(val.data)
         let imgHref=val.data.find((data) => {
           return data.name=="wtkMetaValue"
-        }).value
-        if (imgHref) {
-          let imgHrefSplit=imgHref.split('/')
+        })
+        if (imgHref.value) {
+          let imgHrefSplit=imgHref.value.split('/')
           this.imgNameOld=imgHrefSplit[imgHrefSplit.length-1]
           this.imgName.innerText=imgHrefSplit[imgHrefSplit.length-1]
-          this.imgContUploader.querySelector('.imgUploader').src=imgHref
+          this.imgContUploader.querySelector('.imgUploader').src=imgHref.value
         }
       }
       let formElem=this.alocNewContForm.elements[val.href.replace('/','')]
-      if (formElem!=undefined) {
+      if (formElem) {
         formElem.value=val.data.find((data) => {
           return data.name=="wtkMetaValue"
         }).value
       }
     })      
     if (this.editContent) {
-
-
-
+      // TODO: hmmm...
       // let name=this.wtkContName.split('/')
       //     name=name[name.length-1]
       // this.alocNewContForm.elements['wtkMetaName'].value=name
-
     }
   }
-  _initAttrForCont(){
-    if (this.wtkGroupName==null) { return }
-    let attrWrapper=document.createElement('div')
-        attrWrapper.classList.add('wtkAttrWrapper','wtk-full-shrink')
+  async _initAttrForCont(){
+    if (!this.wtkGroupName) { return }
 
-    let attrs=this.alocNewContForm.querySelector('div .wtk-layout')
-    attrs.appendChild(attrWrapper)
+    const attrWrapper=document.createElement('div')
+          attrWrapper.classList.add('wtkAttrWrapper','wtk-full-shrink')
+
+    const attrs=this.alocNewContForm.querySelector('div .wtk-layout')
+          attrs.appendChild(attrWrapper)
     // this.alocNewContForm.insertBefore(attrWrapper, this.alocNewContForm.querySelector('div div'))
-    fetch(`${this.wtkClass.apiOpen}/groups/${this.wtkGroupName}`)
-    .then((data) => {
-      return data.json()
-    })
-    .then((cj) => {
-      cj.collection.items.forEach((val, key) => {
-
-        let wtkAttrType=val.data.find((data) => {
-          return data.name=="wtkAttrType"
-        }).value
-        this.groupAttrs.push({
-          wtkMetaName:val.href.replace('/',''), 
-          wtkMetaValue:"", 
-          wtkMetaAttr:wtkAttrType, 
-          wtkMetaAttrName:""
-        })
-        this._selectAttrType(wtkAttrType, val, attrWrapper)
-      })
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-    })
+    const path = `${this.wtkClass.apiOpen}/groups/${this.wtkGroupName}`
+    const response = fetch(path).catch(_ => {})
+    if (!response.ok) return this.wtkClass.toast(response.statusText)
+    const cj = await response.json()
+          cj.collection.items.forEach((val, key) => {
+            let wtkAttrType=val.data.find((data) => {
+              return data.name=="wtkAttrType"
+            }).value
+            this.groupAttrs.push({
+              wtkMetaName:val.href.replace('/',''), 
+              wtkMetaValue:"", 
+              wtkMetaAttr:wtkAttrType, 
+              wtkMetaAttrName:""
+            })
+            this._selectAttrType(wtkAttrType, val, attrWrapper)
+          })
   }
   _selectAttrType(type, item, target){
     // let opt=evt.target
@@ -215,17 +187,17 @@ class wtkAlocNewContent extends HTMLElement {
     // console.log(parent)
     // console.log(this.target.querySelector('.wtkAttrValue'))
     let attrElem
-    if (type=="text") { attrElem=this._loadNewInputAttr("text", item) }
-    if (type=="password") { attrElem=this._loadNewInputAttr("password", item) }
-    if (type=="email") { attrElem=this._loadNewInputAttr("email", item) }
-    if (type=="tel") { attrElem=this._loadNewInputAttr("tel", item) }
-    if (type=="date") { attrElem=this._loadNewInputAttr("date", item) }
-    if (type=="checkbox") {}
-    if (type=="selecet") {}
+    if (type=="text") { attrElem=this._loadNewInputAttr(type, item) }
+    if (type=="password") { attrElem=this._loadNewInputAttr(type, item) }
+    if (type=="email") { attrElem=this._loadNewInputAttr(type, item) }
+    if (type=="tel") { attrElem=this._loadNewInputAttr(type, item) }
+    if (type=="date") { attrElem=this._loadNewInputAttr(type, item) }
+    if (type=="checkbox") { return }
+    if (type=="selecet") { return }
 
-    let attrItemElem=document.createElement('div')
-        attrItemElem.classList.add('wtkAttrItem')
-        attrItemElem.innerHTML=attrElem
+    const attrItemElem=document.createElement('div')
+          attrItemElem.classList.add('wtkAttrItem')
+          attrItemElem.innerHTML=attrElem
     target.appendChild(attrItemElem)
   }
   _loadNewInputAttr(type, item){
@@ -286,16 +258,13 @@ class wtkAlocNewContent extends HTMLElement {
     console.log( this.imgContFileInput)
     this.imgContFileInput.files = files;
   }
-  _submitAlocNewCont(evt){
-    let target=evt.target
+  async _submitAlocNewCont(evt){
     evt.preventDefault();
-
-    let body={}
+    let target=evt.target
+    
+    const body = {}
     let validForm=true;
-    let imgCont=""
-    let boundary="blob"
-
-    let validateClass = new validateInput()
+    const validateClass = new validateInput()
     for (let i = 0; i < this.alocNewContForm.elements.length; i++) {
       if (target.elements[i].type!='submit' && target.elements[i].type!='file') {
         validForm=validateClass._validateInput(target.elements[i]);
@@ -303,147 +272,76 @@ class wtkAlocNewContent extends HTMLElement {
       }
     }
     if (!validForm) { return this.wtkClass.toast("invalid form") }
-    let path
-    let method=this.editContent ? 'PUT' : 'POST'
-
-    // jwt
-    let token = this.wtkClass.getCookie("token");
-    let csrfCookie = this.wtkClass.getCookie("XSRF-COOKIE");
-    let myHeaders = new Headers();
-        // myHeaders.append('Content-Type', 'multipart/form-data; ');
-        // myHeaders.append('accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8');
-        myHeaders.append('Authorization', `Bearer ${token}`);
-        myHeaders.append('X-XSRF-TOKEN', `${csrfCookie}`);
-
-    // img
-    let wtkCont=this.imgContFileInput.files[0]
-    let formData = new FormData(evt.target)
-    let file = {
-      dom    : this.imgContFileInput,
-      binary : null
-    };
-
-    let reader = new FileReader();
-
-    file.binary = reader.result;
-    reader.addEventListener("load", function () {
-    });
-    if(file.dom.files[0]) {
-      reader.readAsBinaryString(file.dom.files[0]);
-    }
-    file.dom.addEventListener("change", function () {
-      if(reader.readyState === FileReader.LOADING) {
-        reader.abort();
-      }
-      
-      reader.readAsBinaryString(file.dom.files[0]);
-    });
-
-    // let data=""
-    // data += "--" + boundary + "\r\n";
-
-    // // Describe it as form data
-    // data += 'content-disposition: form-data; '
-    // // Define the name of the form data
-    //       + 'name="'         + "wtkContentThumbnail"          + '"; '
-    // // Provide the real name of the file
-    //       + 'filename="'     + wtkCont.name + '"\r\n';
-    // // And the MIME type of the file
-    // data += 'Content-Type: ' + wtkCont.type + '\r\n';
-
-    // // There's a blank line between the metadata and the data
-    // data += '\r\n';
     
-    // // Append the binary data to our body's request
-    // data += file.binary + '\r\n';
+    // img
+    const contFormData = new FormData(evt.target)
+    const imgForm = new FormData()
+          imgForm.append('img', contFormData.get('img'))
+    const imgInfo = imgForm.get('img')
 
-
-
-
+    let path
     // in group
-    if (this.wtkGroupName!=null) {
-      
-      body.wtkMetaName=this.editContent ? `${this.wtkName || this.wtkContName}` : `${this.wtkGroupName}/contents/${new Date().getTime()}`
-      body.groupAttrs=[]
-      console.log(this.groupAttrs)
-      this.groupAttrs.forEach((val, key) => {
-        val.wtkMetaValue=this.newContentWrapper.querySelector(`*[name="${val.wtkMetaName}"]`).value
-        body.groupAttrs.push(val)
+    if (this.wtkGroupName) {
+      body.wtkMetaName = this.editContent ? 
+          `${this.wtkName || this.wtkContName}`: 
+          `${this.wtkGroupName}/contents/${new Date().getTime()}`
+      body.groupAttrs = this.groupAttrs.map(val => {
+        val.wtkMetaValue = this.newContentWrapper.querySelector(`*[name="${val.wtkMetaName}"]`).value
       })
-      path=this.editContent ? `groups/${this.wtkName || this.wtkContName}` : 'contents'
+      path = this.editContent ? 
+          `${this.wtkClass.api}/groups/${this.wtkName || this.wtkContName}`: 
+          `${this.wtkClass.api}/contents`
     }
     // alone
-    else if (this.wtkName!=null || this.wtkContName!=null) {
-      body.wtkMetaName=this.wtkName|| this.wtkContName
-      path=this.editContent ? `contents/${this.wtkName || this.wtkContName}` : 'contents'
+    else if (this.wtkName || this.wtkContName) {
+      body.wtkMetaName = this.wtkName || this.wtkContName
+      path = this.editContent ? 
+          `${this.wtkClass.api}/contents/${this.wtkName || this.wtkContName}`: 
+          `${this.wtkClass.api}/contents`
     }
     // add general metadata
       
-    this.wtkClass.getGeneralMetadata()
-    .then((settings) => {
-      body.wtkMetaUrl=window.location.href
-      body.wtkMetaOgLocale=settings.metaData.facebook.locale
-      body.wtkMetaOgSitename=settings.metaData.facebook.sitename
-      body.wtkMetaTwitterSite=settings.metaData.twitter.site
-      console.log(body)
-
-      let bodySend = new FormData()
-      let imgInfo=formData.get('img')
-      // console.log(imgInfo)
-      // console.log(this.imgNameOld)
-      let bodyData=[{name:'wtkCont', value:imgInfo.name}, {name:'wtkType', value:'img'}]
-
-      if (imgInfo.name!="") {
-        bodySend.append('img',formData.get('img'))
-      }
-      bodySend.append('bodyData',JSON.stringify(body))
-      console.log(bodySend)
-      // let conf=confirm("Odeslat?")
-      // if (!conf) { throw "" }
-      return fetch(`${this.wtkClass.api}/${path}`, {
-                method:method, 
-                body:bodySend, 
-                headers:myHeaders})
-    })
-    .then((data) => {
-      return data.text()
-    })
-    .then((location) => {
-      console.log(location)
-      if (this.wtkGroupName!=null) {
-        // in group
-        if (this.editContent) {
-          this.wtkClass.updateContent(location)
-
-          // this.wtkClass.editContentData(location, this.wtkGroupName)
-        }
-        else{
-          this.wtkClass.addContentToGroup(location, this.wtkGroupName)
-        }
-      }
-      else{
-        // alone
-        if (this.editContent) {
-          this.wtkClass.updateContent(location)
-          // this.wtkClass.editContentData(location, this.wtkGroupName)
-        }
-        else{
-          this.wtkClass.updateContent(location)
-        }
-      }
-      this._closeAlocNewContClick()
-      this.wtkClass.toast("Content přidán.")
-      // this.wtkClass.__fetchWtkDep(null, 'wtk-aloc-new-content', document.body)
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-    });
+    const wtkSettings = await this.wtkClass.getGeneralMetadata()
+    body.wtkMetaUrl=window.location.href
+    body.wtkMetaOgLocale=wtkSettings.metaData.facebook.locale
+    body.wtkMetaOgSitename=wtkSettings.metaData.facebook.sitename
+    body.wtkMetaTwitterSite=wtkSettings.metaData.twitter.site
+    
+    const method = this.editContent ? 'PUT' : 'POST'
+    // if img exists
+    if (imgInfo.name) {
+      const response = await fetch(path, {
+        method: method,
+        body: imgForm,
+        credentials: 'same-origin'
+      }).catch(_ => {console.log(); })
+      if (!response.ok) return this.wtkClass.toast(response.statusText)
+      const { wtkMetaThumbnail } = await response.json()
+      body.wtkMetaThumbnail = wtkMetaThumbnail
+    }
+    // save content
+    const metaHeaders = new Headers();
+          metaHeaders.append('Content-Type', 'application/json');
+    const response = await fetch(path, {
+      method: method,
+      body: JSON.stringify(body),
+      headers: metaHeaders,
+      credentials: 'same-origin'
+    }).catch(_ => {})
+    if (!response.ok) return this.wtkClass.toast(response.statusText)
+    const { location } = await response.json() //TODO: edit the {} to sute the architecture ... same on line 339 
+    
+    // only in group whne editing 
+    if (this.wtkGroupName && !this.editContent) 
+      return this.wtkClass.addContentToGroup(location, this.wtkGroupName) 
+  
+    this.wtkClass.updateContent(location)
+    
+    this._closeAlocNewContClick()
+    this.wtkClass.toast("Content přidán.")
   } 
   _closeAlocNewContClick(){
     this.parentNode.removeChild(this)
   }
-
-
-  // methods
 }
 customElements.define('wtk-aloc-new-content', wtkAlocNewContent);

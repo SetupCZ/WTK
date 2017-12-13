@@ -442,13 +442,15 @@ module.exports={
       let formMetaData
 
       wtkIndex.validateC(formData, imgFile)
-      .then((data) => {
-
-        let alocDataByName=wtkIndex.getAlocDataByName(formData.wtkMetaName, true)
-        let alocData=wtkIndex.getAlocData()
+      .then(async (data) => {
+        let alocDataByName=await wtkIndex.getAlocDataByName(formData.wtkMetaName, true)
+        let alocData=await wtkIndex.getAlocData()
+        console.log(alocDataByName);
+        console.log(alocData);
         return Promise.all([alocData, alocDataByName])
       })
       .then((data) => {
+        console.log(data);
         // check if alocData is empty
         if (data[0]==null) { data.alocData={alocData:[]} }
         // check if name exists
@@ -475,7 +477,7 @@ module.exports={
         })
         let wtkThumbnail
         if (imgFile) {
-          wtkThumbnail=`${settings.galeryPublicPath}/${imgFile.originalname}`
+          // wtkThumbnail=`${settings.galeryPublicPath}/${imgFile.originalname}`
         }
         formMetaData=[
           {wtkMetaName:"wtkMetaName", wtkMetaValue:formData.wtkMetaName, wtkMetaAttr:"id", wtkMetaAttrName:"name"},
@@ -484,12 +486,12 @@ module.exports={
           {wtkMetaName:"wtkMetaTitle", wtkMetaValue:formData.wtkMetaTitle, wtkMetaAttr:"id", wtkMetaAttrName:"name"},
           {wtkMetaName:"wtkMetaDescription", wtkMetaValue:formData.wtkMetaDescription, wtkMetaAttr:"type", wtkMetaAttrName:"name"},
           {wtkMetaName:"wtkMetaAuthor", wtkMetaValue:formData.wtkMetaAuthor, wtkMetaAttr:"content", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaThumbnail", wtkMetaValue:wtkThumbnail, wtkMetaAttr:"content", wtkMetaAttrName:"name"},
+          {wtkMetaName:"wtkMetaThumbnail", wtkMetaValue:formData.wtkMetaThumbnail, wtkMetaAttr:"content", wtkMetaAttrName:"name"},
 
           {wtkMetaName:"wtkMetaOgUrl", wtkMetaValue:formData.wtkMetaUrl, wtkMetaAttr:"og:url", wtkMetaAttrName:"name"},
           {wtkMetaName:"wtkMetaOgType", wtkMetaValue:"website", wtkMetaAttr:"og:type", wtkMetaAttrName:"name"},
           {wtkMetaName:"wtkMetaOgLocale", wtkMetaValue:formData.wtkMetaOgLocale, wtkMetaAttr:"og:locale", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgImage", wtkMetaValue:wtkThumbnail, wtkMetaAttr:"og:image", wtkMetaAttrName:"name"},
+          {wtkMetaName:"wtkMetaOgImage", wtkMetaValue:formData.wtkMetaThumbnail, wtkMetaAttr:"og:image", wtkMetaAttrName:"name"},
           {wtkMetaName:"wtkMetaOgTitle", wtkMetaValue:formData.wtkMetaTitle, wtkMetaAttr:"og:title", wtkMetaAttrName:"name"},
           {wtkMetaName:"wtkMetaOgSiteName", wtkMetaValue:formData.wtkMetaOgSiteName, wtkMetaAttr:"og:site_name", wtkMetaAttrName:"name"},
           {wtkMetaName:"wtkMetaOgDescription", wtkMetaValue:formData.wtkMetaDescription, wtkMetaAttr:"og:description", wtkMetaAttrName:"name"},
@@ -498,7 +500,7 @@ module.exports={
           {wtkMetaName:"wtkMetaTwitterSite", wtkMetaValue:formData.wtkMetaSite, wtkMetaAttr:"twitter:site", wtkMetaAttrName:"name"},
           {wtkMetaName:"wtkMetaTwitterTitle", wtkMetaValue:formData.wtkMetaTitle, wtkMetaAttr:"twitter:title", wtkMetaAttrName:"name"},
           {wtkMetaName:"wtkMetaTwitterDescription", wtkMetaValue:formData.wtkMetaDescription, wtkMetaAttr:"twitter:description", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaTwitterImage", wtkMetaValue:wtkThumbnail, wtkMetaAttr:"twitter:image", wtkMetaAttrName:"name"},
+          {wtkMetaName:"wtkMetaTwitterImage", wtkMetaValue:formData.wtkMetaThumbnail, wtkMetaAttr:"twitter:image", wtkMetaAttrName:"name"},
           
         ]
         if (formData.groupAttrs!=undefined) {
@@ -523,7 +525,7 @@ module.exports={
       })
       .then((data) => {
         console.log(cjMetaData.collection.href)
-        resolve(cjMetaData.collection.href)
+        resolve({location:cjMetaData.collection.href})
       })
       .catch((err) => {
         console.log(err)

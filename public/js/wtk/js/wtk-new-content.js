@@ -72,14 +72,19 @@ class wtkAlocNewContent extends HTMLElement {
     const [htmlResponse, cssResponse] = await Promise.all([htmlPromise, cssPromise])
     
     if (!htmlResponse.ok || !cssResponse.ok) return this.wtkClass.toast("Ups! Něco se nepovedlo. Zkuste aktualizovat stránku.")
-    
+    // css
+    const css = document.createElement('style')
+          css.innerHTML = await cssResponse.text()
+    this.target.insertBefore(css, this.target.firstChild)
+
     // html
     this.newContentWrapper = document.createElement('div')
     this.newContentWrapper.classList.add('wtk_alocNewContentWrapper')
     this.newContentWrapper.innerHTML = await htmlResponse.text()
 
     this.target.appendChild(this.newContentWrapper)
-    const closeAlocNewCont = this.target.querySelector('#wtk__closeAlocNewContentBtn')
+    const closeAlocNewCont = 
+      this.target.querySelector('#wtk__closeAlocNewContentBtn')
           closeAlocNewCont.addEventListener('click', this._closeAlocNewContClick.bind(this))
     this.alocNewContForm = this.target.querySelector('form')
     this.alocNewContForm.addEventListener('submit', this._submitAlocNewCont.bind(this))
@@ -87,17 +92,14 @@ class wtkAlocNewContent extends HTMLElement {
     this._initAttrForCont()
     this._initThumbnail()
     this._initEditCont()
-    // // validate input on all elems
-    // let validateClass = new validateInput()
-    // for (let i = 0; i < this.alocNewContForm.elements.length; i++) {
-    //   this.alocNewContForm[i].addEventListener('keyup', validateClass._onKeyUp.bind(validateClass))
-    //   this.alocNewContForm[i].addEventListener('keydown', validateClass._onKeyDown.bind(validateClass))
-    // }
 
-    // css
-    const css=document.createElement('style')
-          css.innerHTML = await cssResponse.text()
-    this.target.insertBefore(css, this.target.firstChild)
+    // validate input on all elems on keyup/keydown
+    let validateClass = new validateInput()
+    this.alocNewContForm.elements.forEach((val, key) => {
+      val.addEventListener('keyup', validateClass._onKeyUp.bind(validateClass))
+      val.addEventListener('keydown', validateClass._onKeyDown.bind(validateClass))
+    })
+
   }
   _initThumbnail(){
     this.imgContUploader=this.target.querySelector('#wtk__imgItemCtrl__upload')
@@ -266,7 +268,9 @@ class wtkAlocNewContent extends HTMLElement {
     let validForm=true;
     const validateClass = new validateInput()
     for (let i = 0; i < this.alocNewContForm.elements.length; i++) {
-      if (target.elements[i].type!='submit' && target.elements[i].type!='file') {
+      if (target.elements[i].type != 'submit' && 
+          target.elements[i].type != 'file' && 
+          target.elements[i].type != 'button') {
         validForm=validateClass._validateInput(target.elements[i]);
         body[target.elements[i].name]=target.elements[i].value;
       }

@@ -9,23 +9,17 @@ class wtkNewGroupCtrl extends HTMLElement{
     this.wtkName=this.wtkGroup.getAttribute('wtk-name')
     this._newGroupCtrlInit()
   }
-  _newGroupCtrlInit(){
+  async _newGroupCtrlInit(){
     // make shadow root
     this.target = this.attachShadow({mode: 'open'});
     // css
-    let css=document.createElement('style')
-    fetch(`${this.wtkClass.base}/css/aloc-new-group-btn.css`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      css.innerHTML = data
-      this.target.insertBefore( css, this.target.firstChild )
-    })
-    .catch((err) => {
-      console.log(err)
-      alert("Ups! Nepodařilo se nahrát styly pro tlacitko. Zkuste aktualizovat stránku.")
-    })
+    const path = `${this.wtkClass.base}/css/aloc-new-group-btn.css`
+    const response = await fetch(path).catch(_ => { })
+    if (!response.ok) return this.wtkClass.toast("Ups! Nepodařilo se nahrát styly pro tlacitko. Zkuste aktualizovat stránku.")
+
+    const css = document.createElement('style')
+          css.innerHTML = await response.text()
+    this.target.insertBefore(css, this.target.firstChild)
 
     // plus icon
     let plusIcon=document.createElement('img')
@@ -41,7 +35,6 @@ class wtkNewGroupCtrl extends HTMLElement{
     let wtkAlocNewGroup = document.createElement('wtk-aloc-new-group')
         wtkAlocNewGroup.setAttribute('wtk-name', this.wtkName)
     document.body.appendChild(wtkAlocNewGroup)    
-    // this.wtkClass.__fetchWtkDep(null, 'wtk-aloc-new-content', document.body)
   }
 }
 
@@ -61,92 +54,81 @@ class wtkAlocNewGroup extends HTMLElement {
     this.wtkGroupName=this.getAttribute("wtk-group-name")
     this.editGroup=this.wtkGroupName!=null ? true : false
     this.groupAttrs=[]
-    this.newGroupWrapper=document.createElement('div')
-    this.newGroupWrapper.classList.add('wtk_alocNewGroupWrapper')
+    
     
     this._alocNewGroupInit()
   }
-  _alocNewGroupInit(){
+  async _alocNewGroupInit(){
     // make shadow root
     this.target=this.attachShadow({mode: 'open'});
-    console.log(this)
-    fetch(`${this.wtkClass.base}/views/aloc-new-group.html`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      this.newGroupWrapper.innerHTML=data
-      this.target.appendChild(this.newGroupWrapper)
-      if (this.editGroup) {
-        this._initEditGroup()
-      }
-      let attrOptions=[
-        {name:"text", value:"text", selected:"selected"},
-        {name:"password", value:"password", selected:""},
-        {name:"email", value:"email", selected:""},
-        {name:"tel", value:"tel", selected:""},
-        {name:"checkbox", value:"checkbox", selected:""},
-        {name:"select", value:"select", selected:""},
-        {name:"date", value:"date", selected:""},
-      ]
-      this.attrTypeSelect=this.target.querySelector('#wtk__attrTypeSelect')
-      this.attrTypeSelect.addEventListener('change', this._changeAttrType.bind(this))
-      this.wtkClass.addOptionsToSelect(this.attrTypeSelect, attrOptions)
+    const htmlPath = `${this.wtkClass.base}/views/aloc-new-group.html`
+    const cssPath = `${this.wtkClass.base}/css/aloc-new-group.css`
 
+    const htmlPromise = fetch(htmlPath).catch(_ => { })
+    const cssPromise = fetch(cssPath).catch(_ => { })
+    const [htmlResponse, cssResponse] = await Promise.all([htmlPromise, cssPromise])
 
-
-      let addAttrToContenBtn=this.target.querySelector('#wtk__addAttrToContenBtn')
-          addAttrToContenBtn.addEventListener('click', this._addAttrToContent.bind(this))
-
-      let closeAlocNewGroup=this.target.querySelector('#wtk__closeAlocNewGroupBtn')
-          closeAlocNewGroup.addEventListener('click', this._closeAlocNewGroupClick.bind(this))
-      // form
-      this.addNewAttrForm=this.target.querySelector('#wtk__newAttrForm')
-      this.addNewAttrForm.addEventListener('submit', this._submitNewAttrForm.bind(this))
-
-      this.alocNewGroupForm=this.target.querySelector('#wtk__newGroupForm')
-      this.alocNewGroupForm.addEventListener('submit', this._submitAlocNewGroup.bind(this))
-      // this.alocNewGroupForm.querySelector('input[name="wtkName"]').value=this.wtkName
-      // validate input on all elems
-      let validateClass = new validateInput()
-      for (let i = 0; i < this.alocNewGroupForm.elements.length; i++) {
-        this.alocNewGroupForm[i].addEventListener('keyup', validateClass._onKeyUp.bind(validateClass))
-        this.alocNewGroupForm[i].addEventListener('keydown', validateClass._onKeyDown.bind(validateClass))
-      }
-
-    })
-    .catch((err) => {
-      console.log(err)
-      this.wtkClass.toast(err)
-    })
+    if (!htmlResponse.ok || !cssResponse.ok) return this.wtkClass.toast("Ups! Něco se nepovedlo. Zkuste aktualizovat stránku.")
 
     // css
-    let css=document.createElement('style')
-    fetch(`${this.wtkClass.base}/css/aloc-new-group.css`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      css.innerHTML = data
-      this.target.insertBefore( css, this.target.firstChild )
-    })
-    .catch((err) => {
-      console.log(err)
-      this.wtkClass.toast(err)
-      alert("Ups! Nepodařilo se nahrát styly pro tlacitko. Zkuste aktualizovat stránku.")
+    const css = document.createElement('style')
+    css.innerHTML = await cssResponse.text()
+    this.target.insertBefore(css, this.target.firstChild)
+    
+    // html
+    this.newGroupWrapper = document.createElement('div')
+    this.newGroupWrapper.classList.add('wtk_alocNewGroupWrapper')
+    this.newGroupWrapper.innerHTML = await htmlResponse.text() 
+    this.target.appendChild(this.newGroupWrapper)
+    
+    this._initEditGroup()
+    this._initAttrOptions()
+
+    // form
+    this.addNewAttrForm=this.target.querySelector('#wtk__newAttrForm')
+    this.addNewAttrForm.addEventListener('submit', this._submitNewAttrForm.bind(this))
+
+    this.alocNewGroupForm=this.target.querySelector('#wtk__newGroupForm')
+    this.alocNewGroupForm.addEventListener('submit', this._submitAlocNewGroup.bind(this))
+    // this.alocNewGroupForm.querySelector('input[name="wtkName"]').value=this.wtkName
+    
+    // validate input on all elems on keyup/keydown
+    let validateClass = new validateInput()
+    this.alocNewGroupForm.elements.forEach((val, key) => {
+      val.addEventListener('keyup', validateClass._onKeyUp.bind(validateClass))
+      val.addEventListener('keydown', validateClass._onKeyDown.bind(validateClass))
     })
   }
+  _initAttrOptions(){
+    const attrOptions = [
+      { name: "text", value: "text", selected: "selected" },
+      { name: "password", value: "password", selected: "" },
+      { name: "email", value: "email", selected: "" },
+      { name: "tel", value: "tel", selected: "" },
+      { name: "checkbox", value: "checkbox", selected: "" },
+      { name: "select", value: "select", selected: "" },
+      { name: "date", value: "date", selected: "" },
+    ]
+    this.attrTypeSelect = this.target.querySelector('#wtk__attrTypeSelect')
+    this.attrTypeSelect.addEventListener('change',
+      this._changeAttrType.bind(this))
+    this.wtkClass.addOptionsToSelect(this.attrTypeSelect, attrOptions)
+
+    const addAttrToContenBtn =
+      this.target.querySelector('#wtk__addAttrToContenBtn')
+          addAttrToContenBtn.addEventListener('click', this._addAttrToContent.bind(this))
+
+    const closeAlocNewGroup =
+      this.target.querySelector('#wtk__closeAlocNewGroupBtn')
+          closeAlocNewGroup.addEventListener('click', this._closeAlocNewGroupClick.bind(this))
+  }
   _initEditGroup(){
-    fetch(`${this.wtkClass.apiOpen}/groups/${this.wtkGroupName}`)
-    .then((data) => {
-      return data.json()
-    })
-    .then((cj) => {
-      this._setGroupMetaData(cj)
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-    })
+    if (!this.editGroup) return 
+    const path = `${this.wtkClass.apiOpen}/groups/${this.wtkGroupName}`
+    const response = await fetch(path).catch(_ => {})
+    if (!response.ok) return this.wtkClass.toast(response.statusText)
+    const cj = await data.json()
+    this._setGroupMetaData(cj)
   }
   _setGroupMetaData(cj){
     console.log(cj)
@@ -161,12 +143,11 @@ class wtkAlocNewGroup extends HTMLElement {
   }
   _changeAttrType(evt){
     let opt=evt.target || target
-    let parent=this.target
-    if (opt.value=="text") { this._loadNewInputAttr("text") }
-    if (opt.value=="password") { this._loadNewInputAttr("password") }
-    if (opt.value=="email") { this._loadNewInputAttr("email") }
-    if (opt.value=="tel") { this._loadNewInputAttr("tel") }
-    if (opt.value=="date") { this._loadNewInputAttr("date") }
+    if (opt.value == "text") { this._loadNewInputAttr(opt.value) }
+    if (opt.value == "password") { this._loadNewInputAttr(opt.value) }
+    if (opt.value == "email") { this._loadNewInputAttr(opt.value) }
+    if (opt.value == "tel") { this._loadNewInputAttr(opt.value) }
+    if (opt.value == "date") { this._loadNewInputAttr(opt.value) }
     if (opt.value=="checkbox") {}
     if (opt.value=="selecet") {}
   }
@@ -201,71 +182,72 @@ class wtkAlocNewGroup extends HTMLElement {
           </code>
         ` // <--NEMAZAT!
         // replace < by &lt; and > by &gt;
-        let wtkAttrName = wtkAttrValueElem.querySelector('input[name="wtkAttrName"]')
-            console.log(wtkAttrName)
-            wtkAttrName.addEventListener('keyup', this._setCodeParams.bind(this, 'name'))
-        let wtkAttrLabel = wtkAttrValueElem.querySelector('input[name="wtkAttrLabel"]')
-            wtkAttrLabel.addEventListener('keyup', this._setCodeParams.bind(this, 'label'))
-        let wtkAttrRegex = wtkAttrValueElem.querySelector('input[name="wtkAttrRegex"]')
-            wtkAttrRegex.addEventListener('keyup', this._setCodeParams.bind(this, 'regex'))
-        let wtkAttrReq = wtkAttrValueElem.querySelector('input[name="wtkAttrReq"]')
-            wtkAttrReq.addEventListener('click', this._setCodeParams.bind(this, 'name'))
+    const wtkAttrName = 
+      wtkAttrValueElem.querySelector('input[name="wtkAttrName"]')
+          wtkAttrName.addEventListener('keyup', 
+            this._setCodeParams.bind(this, 'name'))
+    const wtkAttrLabel = 
+      wtkAttrValueElem.querySelector('input[name="wtkAttrLabel"]')
+          wtkAttrLabel.addEventListener('keyup', 
+            this._setCodeParams.bind(this, 'label'))
+    const wtkAttrRegex = 
+      wtkAttrValueElem.querySelector('input[name="wtkAttrRegex"]')
+          wtkAttrRegex.addEventListener('keyup', 
+            this._setCodeParams.bind(this, 'regex'))
+    const wtkAttrReq = 
+      wtkAttrValueElem.querySelector('input[name="wtkAttrReq"]')
+          wtkAttrReq.addEventListener('click', 
+            this._setCodeParams.bind(this, 'name'))
   }
   _setCodeParams(param, evt){
-    // console.log(param)
-    // console.log(evt)
-    // console.log(evt.target.value)
-    let wtkAttrCodeElem = this.target.querySelector('.wtkAttrValue code')
-    let text=wtkAttrCodeElem.innerHTML
-    text.replace(`/${param}\=([\"\'])(?:(?=(\\?))\\2.)*?\\1/`, `${param}="${evt.target.value}"`)
-    // console.log(text)
-    // console.log(wtkAttrCodeElem.innerHTML)
-    // wtkAttrCodeElem.innerHTML=text
+    const wtkAttrCodeElem = this.target.querySelector('.wtkAttrValue code')
+    let text = wtkAttrCodeElem.innerHTML
+        text.replace(`/${param}\=([\"\'])(?:(?=(\\?))\\2.)*?\\1/`, 
+          `${param}="${evt.target.value}"`)
   }
   _addAttrToContent(evt){
-    let wtkNewAttribute=this.target.querySelector('.wtkNewAttribute')
-        wtkNewAttribute.classList.toggle('wtk-hidden')
+    const wtkNewAttribute = this.target.querySelector('.wtkNewAttribute')
+          wtkNewAttribute.classList.toggle('wtk-hidden')
     this.attrTypeSelect.dispatchEvent(new Event('change'));
   }
   _submitNewAttrForm(evt){
     evt.preventDefault()
-    let target=evt.target
-    let body={}
+    const target=evt.target
+    const body={}
     let validForm=true;
     console.log(target)
 
     let validateClass = new validateInput()
     for (let i = 0; i < this.addNewAttrForm.elements.length; i++) {
       if (target.elements[i].type!='submit') {
-        // validForm=validateClass._validateInput(target.elements[i]);
         if (target.elements[i].name=="wtkAttrReq") {
           target.elements[i].value=target.elements[i].checked?'required':''
         }
+        validForm=validateClass._validateInput(target.elements[i]);
         body[target.elements[i].name]=target.elements[i].value;
       }
     }
-    this._updateAttrs(body)
     console.log(body)
+
+    this._updateAttrs(body)
   }
   _updateAttrs(body){
     this.groupAttrs.push(body)
-    console.log(body.wtkAttrReq)
-    let groupAttr=document.createElement('div')
+    let groupAttr = document.createElement('div')
         groupAttr.innerHTML=`
           <code style="display: inline-block; background-color:lightgrey; padding:5px 15px; border-radius:3px; margin:10px 0; color:grey;">
             &lt;input type="${body.wtkAttrType}" label="${body.wtkAttrLabel}" name="${body.wtkAttrName}" pattern="${body.wtkAttrRegex}" ${body.wtkAttrReq} /&gt;
           </code>
           <button class="wtkDropAttr" wtk-attr-pos="${this.groupAttrs.length-1}">ODEBRAT</button>
-        `
+        ` //<= POZOR NEMAZAT
     let wtkAttributesHidden=this.target.querySelector('.wtkAttributesHidden')
         wtkAttributesHidden.appendChild(groupAttr)
     let wtkDropAttr=groupAttr.querySelector('.wtkDropAttr')
         wtkDropAttr.addEventListener('click', this._dropAttr.bind(this))
-        console.log(this.groupAttrs)
   }
   _dropAttr(evt){
     evt.preventDefault()
-    let target=evt.target
+    const target=evt.target
     let attrPos=target.getAttribute('wtk-attr-pos')
     console.log(target.parentNode)
     target.parentNode.parentNode.removeChild(target.parentNode)
@@ -274,67 +256,51 @@ class wtkAlocNewGroup extends HTMLElement {
   }
   _submitAlocNewGroup(evt){
     evt.preventDefault();
-    let target=evt.target
+    const target=evt.target
 
-    let body={}
-    let validForm=true;
+    const body = {}
+          body.wtkName = this.wtkName
+          body.groupAttrs = this.groupAttrs
+    let validForm = true;
 
     let validateClass = new validateInput()
     for (let i = 0; i < this.alocNewGroupForm.elements.length; i++) {
-      if (target.elements[i].type!='submit' && target.elements[i].type!='button') {
+      if (target.elements[i].type!='submit' && 
+          target.elements[i].type!='button') {
         validForm=validateClass._validateInput(target.elements[i]);
-
         body[target.elements[i].name]=target.elements[i].value;
       }
     }
     if (!validForm) { return this.wtkClass.toast("invalid form") }
       
-    let method=this.editGroup ? 'PUT' : 'POST'
-    let path=this.editGroup ? `groups/${this.wtkGroupName}` : 'groups'
+    const method = this.editGroup ? 'PUT' : 'POST'
+    const path = this.editGroup ? 
+        `${this.wtkClass.api}/groups/${this.wtkGroupName}`: 
+        `${this.wtkClass.api}/groups`
 
-    // jwt
-    let token = this.wtkClass.getCookie("token");
-    let csrfCookie = this.wtkClass.getCookie("XSRF-COOKIE");
-    let myHeaders = new Headers();
-        myHeaders.append('Content-Type', 'application/json');
-        myHeaders.append('Authorization', `Bearer ${token}`);
-        myHeaders.append('X-XSRF-TOKEN', `${csrfCookie}`);
-        
-    body.wtkName=this.wtkName
-    body.groupAttrs=this.groupAttrs
+    const metaHeaders = new Headers();
+          myHeaders.append('Content-Type', 'application/json');
     console.log(body)
 
     // return 
-    fetch(`${this.wtkClass.api}/${path}`, {
+    const response = await fetch(path, {
       method:method, 
       body:JSON.stringify(body), 
-      headers:myHeaders
-    })
-    .then((data) => {
-      return data.json()
-    })
-    .then((data) => {
-      console.log(data)
-      let updateGroupName=this.editGroup? this.wtkGroupName : this.wtkName
-      console.log(updateGroupName)
-      this.wtkClass.updateGroup(updateGroupName)      
-      this.wtkClass.toast("Group přidán.")
-      // this.wtkClass.__fetchWtkDep(null, 'wtk-aloc-new-group', document.body)
-      this._closeAlocNewGroupClick()
-
-
-    })
-    .catch((err) => {
-      console.log(err)
-      this.wtkClass.toast(err)
-    })
+      headers:myHeaders,
+      credentials: 'same-origin'
+    }).catch(_ => {})
+    if (!response.ok) return this.wtkClass.toast(response.statusText)
+    const data = await response.json()
+    console.log(data);
+    
+    // const 
+    const updateGroupName=this.editGroup? this.wtkGroupName : this.wtkName
+    this.wtkClass.updateGroup(updateGroupName)      
+    this.wtkClass.toast("Group přidán.")
+    this._closeAlocNewGroupClick()
   } 
   _closeAlocNewGroupClick(){
-    console.log(this.parentNode)
     this.parentNode.removeChild(this)
   }
-
-
-  // methods
 }
 customElements.define('wtk-aloc-new-group', wtkAlocNewGroup);

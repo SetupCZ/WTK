@@ -10,23 +10,16 @@ class wtkContentCtrl extends HTMLElement{
     this.wtkGroupName=this.wtkContent.getAttribute('wtk-ingroup')
     this._contentCtrlInit()
   }
-  _contentCtrlInit(){
+  async _contentCtrlInit(){
     this.target = this.attachShadow({mode: 'open'});
     // css
-    let css=document.createElement('style')
-    fetch(`${this.wtkClass.base}/css/content-ctrl.css`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      css.innerHTML = data
-      this.target.insertBefore( css, this.target.firstChild )
-    })
-    .catch((err) => {
-      console.log(err)
-      this.wtkClass.toast(err)
-      alert("Ups! Nepodařilo se nahrát styly pro tlacitko. Zkuste aktualizovat stránku.")
-    })
+    const css=document.createElement('style')
+
+    const path = `${this.wtkClass.base}/css/content-ctrl.css`
+    const response = await fetch(path).catch(_ => {})
+    if (!response.ok) return this.wtkClass.toast(response.statusText)
+    css.innerHTML = await response.text()
+    this.target.insertBefore( css, this.target.firstChild )
 
     // edit icon
     let editIcon=document.createElement('img')
@@ -69,61 +62,42 @@ class wtkContentCtrl extends HTMLElement{
       `${this.wtkClass.base}/js/wtk-new-content.js`, 
       null, 
       this.target) 
-    let wtkAlocNewCont = document.createElement('wtk-aloc-new-content')
+    const wtkAlocNewCont = document.createElement('wtk-aloc-new-content')
         wtkAlocNewCont.setAttribute('wtk-cont-name', this.wtkName)
-        if (this.wtkGroupName!=null) {
-          wtkAlocNewCont.setAttribute('wtk-ingroup', this.wtkGroupName)
-        }
+    if (this.wtkGroupName) {
+        wtkAlocNewCont.setAttribute('wtk-ingroup', this.wtkGroupName)
+    }
     document.body.appendChild(wtkAlocNewCont)    
   }
   _trashClick(evt){
-    // jwt
-    let token = this.wtkClass.getCookie("token");
-    let csrfCookie = this.wtkClass.getCookie("XSRF-COOKIE");
-    let myHeaders = new Headers();
-        myHeaders.append('Content-Type', 'application/json');
-        myHeaders.append('Authorization', `Bearer ${token}`);
-        myHeaders.append('X-XSRF-TOKEN', `${csrfCookie}`);
+    const path = this.wtkGroupName==null ? 
+        `${this.wtkClass.api}/contents/${this.wtkName}`: 
+        `${this.wtkClass.api}/groups/${this.wtkName}`
+    const trashHeaders = new Headers();
+          trashHeaders.append('Content-Type', 'application/json');
 
-    let path=this.wtkGroupName==null ? 'contents' : 'groups'
-    fetch(`${this.wtkClass.api}/${path}/${this.wtkName}`,{
+    const response = await fetch(path,{
       method:'DELETE',
-      headers:myHeaders
-    })
-    .then((data) => {
-      return data.text()
-    })
-    .then((cj) => {
-      console.log(cj)
-      this.parentNode.remove()
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-    })
+      headers:trashHeaders
+    }).catch(_ => {})
+    if (!response.ok) return this.wtkClass.toast(response.statusText)
+    const { location } = await response.json()
+    this.parentNode.remove()
   }
   _newTextClick(evt){
-    this.wtkClass._getTinyMCEJS()
-    .then((data) => {
+    try {
+      this.wtkClass._getTinyMCEJS()
       this._tinymceLoaded()
-    })
-    .catch((err) => {
-      console.log(err)
+    } catch (err) {
       this.wtkClass.toast(err)
-    });
+    }
   }
   _newImgClick(evt){
-    // TODO!!!
-
-    // let wtkContentElem=this.closest('wtk-content')
     let wtkImgItemElem=document.createElement('wtk-new-img-item')
-
     this.wtkContent.insertBefore(wtkImgItemElem, this.wtkContent.lastChild)
   }
   _tinymceLoaded(evt){
-    // console.log('tinyloaded')
-    // let wtkContentElem=this.closest('wtk-content')
     let wtkTextItemElem=document.createElement('wtk-new-text-item')
-
     this.wtkContent.insertBefore(wtkTextItemElem, this.wtkContent.lastChild)
   }
 }
@@ -142,9 +116,7 @@ class wtkNewTextItem extends HTMLElement {
   }
   connectedCallback(){
     this.wtkContent=this.closest('wtk-content') || this.closest('wtk-content-meta')
-    // this.wtkContent=this.closest('wtk-content')
     this.wtkGroupName=this.wtkContent.getAttribute("wtk-ingroup")
-    // console.log(this.getAttribute('wtk-text-content'))
     this.wtkItemHref=this.getAttribute('wtk-text-content')
     this.editContent=this.wtkItemHref!=null ? true : false 
     this.wtkItemContent=this.editContent ? this.parentNode : undefined
@@ -152,140 +124,129 @@ class wtkNewTextItem extends HTMLElement {
 
     this._textItemInit()
   }
-  _textItemInit(){
+  async _textItemInit(){
     // make shadow root
     // this.target=this.attachShadow({mode: 'open'});
     this.target=this
+    const htmlPath = `${this.wtkClass.base}/views/text-item-ctrl.html`
+    const cssPath = `${this.wtkClass.base}/css/text-item-ctrl.css`
 
-    let textHTML=document.createElement('div')
-    fetch(`${this.wtkClass.base}/views/text-item-ctrl.html`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      textHTML.innerHTML=data
-      this.target.appendChild(textHTML)
-      // window.tinymce.dom.Event.domLoaded = true;
-      let textItem=this.target.querySelector('#wtk__textItem')
-      tinymce.init({ target:textItem });
+    const htmlPromise = fetch(htmlPath).catch(_ => { })
+    const cssPromise = fetch(cssPath).catch(_ => { })
+    const [htmlResponse, cssResponse] = await Promise.all([htmlPromise, cssPromise])
 
-      if (this.editContent) {
-        let wtkContentItem=this.target.parentNode.querySelector('wtk-tinymce')
-            console.log(this.target)
-        let wtkTinyMCECont=this.target.querySelector('#wtk__textItem')
-            wtkTinyMCECont.innerHTML=wtkContentItem.innerHTML
-      }
-      this._wtkTextItemCtrlInit()
-      
-    })
-    .catch((err) => {
-      console.log(err)
-      this.wtkClass.toast(err)
-    })
-
+    if (!htmlResponse.ok || !cssResponse.ok) return this.wtkClass.toast("Ups! Něco se nepovedlo. Zkuste aktualizovat stránku.")
     // css
-    let css=document.createElement('style')
-    fetch(`${this.wtkClass.base}/css/text-item-ctrl.css`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      css.innerHTML = data
-      this.target.insertBefore( css, this.target.firstChild )
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-      console.log(err)
-      alert("Ups! Nepodařilo se nahrát styly pro tlacitko. Zkuste aktualizovat stránku.")
-    })
+    const css = document.createElement('style')
+    css.innerHTML = await cssResponse.text()
+    this.target.insertBefore(css, this.target.firstChild)
+
+    // html
+    const textHTML = document.createElement('div')
+          textHTML = await htmlResponse.text()
+    this.target.appendChild(textHTML)
+
+    const textItem = this.target.querySelector('#wtk__textItem')
+    tinymce.init({ target:textItem });
+    
+    this._wtkTextItemCtrlInit()
+
+    if (!this.editContent) return
+    const wtkContentItem = 
+      this.target.parentNode.querySelector('wtk-tinymce')
+    const wtkTinyMCECont = 
+      this.target.querySelector('#wtk__textItem')
+        wtkTinyMCECont.innerHTML = wtkContentItem.innerHTML
   }
   _wtkTextItemCtrlInit(){
-    this.textContForm=this.target.querySelector('form')
-        .addEventListener('submit', this._saveClick.bind(this))
-    this.fullscreenButton=this.querySelector('#wtk__textItemCtrl__fullscreen')
-        .addEventListener('click', this._fullscreenClick.bind(this))
-    this.closeButton=this.target.querySelector('#wtk__textItemCtrl__close')
-        .addEventListener('click', this._closeClick.bind(this))
+    this.textContForm = this.target.querySelector('form')
+      .addEventListener('submit', this._saveClick.bind(this))
+    this.fullscreenButton = 
+      this.querySelector('#wtk__textItemCtrl__fullscreen')
+      .addEventListener('click', this._fullscreenClick.bind(this))
+    this.closeButton = 
+      this.target.querySelector('#wtk__textItemCtrl__close')
+      .addEventListener('click', this._closeClick.bind(this))
   }
   _fullscreenClick(evt){
     this.target.classList.toggle('wtkFullScreen')
   }
-  _saveClick(evt){
+  async _saveClick(evt){
     evt.preventDefault()
-    let textContent = tinyMCE.get('wtk__textItem').getContent();
-    // headers
-    let method=this.editContent ? 'PUT' : 'POST'
-    console.log(this.wtkGroupName)
-    let groupPath=this.wtkGroupName==null ? `contents` : `groups`
-    let path=this.editContent ? `${groupPath}/${this.wtkItemHref}` : `${groupPath}/${this.wtkContent.wtkName}/items`
+    
 
-    // jwt
-    let token = this.wtkClass.getCookie("token");
-    let csrfCookie = this.wtkClass.getCookie("XSRF-COOKIE");
-    let myHeaders = new Headers();
-        myHeaders.append('Content-Type', 'application/json');
-        myHeaders.append('Authorization', `Bearer ${token}`);
-        myHeaders.append('X-XSRF-TOKEN', `${csrfCookie}`);
+    const method = this.editContent ? 'PUT' : 'POST'
+    const groupPath = his.wtkGroupName == null ? 
+      'contents' : 'groups'
+    this.wtkGroupName == null ? 'contents' : 'groups'
+    const path = this.editContent ? 
+        `${this.wtkClass.api}/${groupPath}/${this.wtkItemHref}` : 
+        `${this.wtkClass.api}/${groupPath}/${this.wtkContent.wtkName}/items`
+    
+    const textHeaders = new Headers();
+          textHeaders.append('Content-Type', 'application/json');
 
-    // cj
-    let cj=this.wtkContent.getCJ()
-    console.log(cj)
-    let cjPosition = 0
-    if (cj.collection.items.length!=0) {
-      cjPosition = cj.collection.items[cj.collection.items.length-1].data.find((val, key) => {
-        return val.name==="wtkPosition"
-      }).value
-      console.log(cjPosition)
-      // cjPosition=1
-      cjPosition=cjPosition.value+1
-    }
     // body
-    console.log(cjPosition)
-    let body=[{name:'wtkCont', value:textContent}, {name:'wtkType', value:'text'}]
-    if (!this.editContent) { body.push({name:'wtkPosition', value:cjPosition})}
+    const textContent = tinyMCE.get('wtk__textItem').getContent();
+    const body = [
+      {name:'wtkCont', value:textContent}, 
+      {name:'wtkType', value:'text'}
+    ]
 
-    // ${this.wtkContent.wtkName}
-    console.log(path)
+    // set position if new item
+    if (!this.editContent) {
+      // TODO: get cj items data in content-meta 
+      const cj = this.wtkContent.getCJ()
+      let cjPosition =
+        cj.collection.items[cj.collection.items.length - 1]
+          .data.find((val, key) => {
+            return val.name === "wtkPosition"
+          })
+      cjPosition = cjPosition ? cjPosition.value + 1 : 0
+      
+      body.push({
+        name:"wtkPosition", value:cjPosition
+      })
+    }
+
     // return
-    fetch(`${this.wtkClass.api}/${path}`,{
+    const response = await fetch(path,{
       method:method, 
       body:JSON.stringify(body), 
-      headers:myHeaders
-    })
-    .then((data) => {
-      console.log(data)
-      console.log(data.headers.get('location'))
-      return data.headers.get('location')
-      // return data.json()
-    })
-    .then((location) => {
-      console.log('location',location)
-      if (this.editContent) {
-        this.wtkClass.updateContentTextItem(location, this.wtkItemContent, 'text', groupPath)
-      }
-      else{
-        this._closeClick()
-        this.wtkClass.addContentItem(location, this.wtkContent, this.wtkContent.lastChild, 'text')
-      }
-      this.wtkContent.updateCJ(groupPath, this.wtkContent.wtkName)
+      headers:textHeaders
+    }).catch(_ => {})
+    if (!response.ok) return this.wtkClass.toast(response.statusText)
+    const { location } = await response.json()
 
-    })
-    .catch((err) => {
-    console.log(err)
-    })
+    if (this.editContent) {
+      this.wtkClass.updateContentTextItem(
+        location, 
+        this.wtkItemContent, 
+        'text', 
+        groupPath)
+    }
+    else{
+      this._closeClick()
+      this.wtkClass.addContentItem(
+        location, this.wtkContent, 
+        this.wtkContent.lastChild, 'text')
+    }
+    await this.wtkContent.updateCJ(
+      groupPath, 
+      this.wtkContent.wtkName)
   }
   _closeClick(evt){
     // evt.preventDefault()
     let wtkTextItemElem=document.querySelector('wtk-new-text-item')
 
     if (this.editContent) {
-        let parent=wtkTextItemElem.parentNode
-          parent
-            .querySelector('wtk-tinymce')
-            .classList.remove('wtk-hidden')
-          parent
-            .querySelector('wtk-item-ctrl')
-            .classList.remove('wtk-hidden')
+      const parent=wtkTextItemElem.parentNode
+            parent
+              .querySelector('wtk-tinymce')
+              .classList.remove('wtk-hidden')
+            parent
+              .querySelector('wtk-item-ctrl')
+              .classList.remove('wtk-hidden')
     }
     wtkTextItemElem.remove()
   }
@@ -310,74 +271,63 @@ class wtkNewImgItem extends HTMLElement {
     this.metaData={}
     this._imgItemInit()
   }
-  _imgItemInit(){
+  async _imgItemInit(){
     // make shadow root
     // this.target=this.attachShadow({mode: 'open'});
     this.target=this
+    const htmlPath = `${this.wtkClass.base}/views/img-item-ctrl.html`
+    const cssPath = `${this.wtkClass.base}/css/img-item-ctrl.css`
 
-    let textHTML=document.createElement('div')
-    fetch(`${this.wtkClass.base}/views/img-item-ctrl.html`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      textHTML.innerHTML=data
-      this.target.appendChild(textHTML)
-      // window.tinymce.dom.Event.domLoaded = true;
-      // tinymce.init({ selector:'#wtk__imgItem' });
+    const htmlPromise = fetch(htmlPath).catch(_ => { })
+    const cssPromise = fetch(cssPath).catch(_ => { })
+    const [htmlResponse, cssResponse] = await Promise.all([htmlPromise, cssPromise])
 
-      if (this.editContent) {
-        this.metaData=this.wtkItemContent.getMetaData()
-        console.log(this.wtkItemContent)
-        let metaWtkWidth
-        let metaWtkHeight
-        let metaWtkCont
-        // this.metaData.data.forEach((val, key) => {
-        //   metaWtkWidth=val.name=="wtkWidth" ? val.value
-        //   metaWtkHeight=val.name=="wtkHeight" ? val.value
-        //   metaWtkCont=val.name=="wtkCont" ? val.value
-        // })
-        let wtkWidthElem=this.wtkItemContent.querySelector('form input[name="wtkWidth"]')
-            .value=this.metaData.data.find((data) => {
-              return data.name=="wtkWidth"
-            }).value
-        let wtkHeightElem=this.wtkItemContent.querySelector('form input[name="wtkHeight"]')
-            .value=this.metaData.data.find((data) => {
-              return data.name=="wtkHeight"
-            }).value
-        let imgNameElem=this.wtkItemContent.querySelector('#imgName')
-            .innerHTML=this.metaData.data.find((data) => {
-              return data.name=="wtkCont"
-            }).value
-        let imgFileElem=this.wtkItemContent.querySelector('.imgUploader')
-            .src=this.wtkItemContent.querySelector('wtk-imgfile img').src
-        //     console.log(this.target)
-        // let wtkTinyMCECont=this.target.querySelector('#wtk__textItem')
-        //     wtkTinyMCECont.innerHTML=wtkContentItem.innerHTML
-      }
-      this._wtkImgItemCtrlInit()
-      
-    })
-    .catch((err) => {
-      console.log(err)
-      this.wtkClass.toast(err)
-    })
-
+    if (!htmlResponse.ok || !cssResponse.ok) return this.wtkClass.toast("Ups! Něco se nepovedlo. Zkuste aktualizovat stránku.")
     // css
-    let css=document.createElement('style')
-    fetch(`${this.wtkClass.base}/css/img-item-ctrl.css`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      css.innerHTML = data
-      this.target.insertBefore( css, this.target.firstChild )
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-      console.log(err)
-      alert("Ups! Nepodařilo se nahrát styly pro tlacitko. Zkuste aktualizovat stránku.")
-    })
+    const css = document.createElement('style')
+    css.innerHTML = await cssResponse.text()
+    this.target.insertBefore(css, this.target.firstChild)
+
+    // html
+    const textHTML = document.createElement('div')
+          textHTML.innerHTML = await htmlResponse.text()
+    this.target.appendChild(textHTML)
+    
+    this._wtkImgItemCtrlInit()
+    this._editImageInit()
+  }
+  _editImageInit(){
+    if (!this.editContent) return
+
+    this.metaData = this.wtkItemContent.getMetaData()
+    console.log(this.wtkItemContent)
+    // TODO: look into this
+    let metaWtkWidth
+    let metaWtkHeight
+    let metaWtkCont
+    // this.metaData.data.forEach((val, key) => {
+    //   metaWtkWidth=val.name=="wtkWidth" ? val.value
+    //   metaWtkHeight=val.name=="wtkHeight" ? val.value
+    //   metaWtkCont=val.name=="wtkCont" ? val.value
+    // })
+    const wtkWidthElem = 
+      this.wtkItemContent.querySelector('form input[name="wtkWidth"]')
+      .value = this.metaData.data.find((data) => {
+        return data.name == "wtkWidth"
+      }).value
+    const wtkHeightElem = 
+      this.wtkItemContent.querySelector('form input[name="wtkHeight"]')
+      .value = this.metaData.data.find((data) => {
+        return data.name == "wtkHeight"
+      }).value
+    const imgNameElem = 
+      this.wtkItemContent.querySelector('#imgName')
+      .innerHTML = this.metaData.data.find((data) => {
+        return data.name == "wtkCont"
+      }).value
+    const imgFileElem = 
+      this.wtkItemContent.querySelector('.imgUploader')
+      .src = this.wtkItemContent.querySelector('wtk-imgfile img').src
   }
   _wtkImgItemCtrlInit(){
     this.imgContUploader=this.querySelector('#wtk__imgItemCtrl__upload')
@@ -399,173 +349,111 @@ class wtkNewImgItem extends HTMLElement {
   }
   _saveClick(evt){
     evt.preventDefault()
-    console.log('this')
-    // return
-    let imgCont=""
-    // headers
-    console.log(evt)
-    let form = evt.target
-    console.log(form)
-    let formData = new FormData(form)
-    console.log(formData)
-    console.log(this.imgContFileInput.files[0])
 
-    let boundary="blob"
-    console.log(boundary)
+    // body
+    const validatedBody = {}
+    let validForm = true;
+    const validateClass = new validateInput()
+    for (const val of this.alocNewContForm.elements) {
+      if (target.elements[i].type != 'submit' &&
+        target.elements[i].type != 'file' &&
+        target.elements[i].type != 'button') {
+        validForm = validateClass._validateInput(target.elements[i]);
+        validatedBody[target.elements[i].name] = target.elements[i].value;
+      }
+    }
+    if (!validForm) { return this.wtkClass.toast("invalid form") }
+    
+    const imgWidth = validatedBody.wtkWidth=="" ? 
+      "auto" : validatedBody.wtkWidth 
+    const imgHeight = validatedBody.wtkHeight=="" ? 
+      "auto" : validatedBody.wtkHeight 
 
-    let wtkCont=this.imgContFileInput.files[0]
-    let method=this.editContent ? 'PUT' : 'POST'
-    let groupPath=this.groupName==null ? 'contents' : 'groups'
+    const body = [
+      { name: 'wtkType', value: 'img' },
+      { name: 'wtkWidth', value: imgWidth },
+      { name: 'wtkHeight', value: imgHeight }
+    ]
 
-    let path=this.editContent ? `${groupPath}/${this.wtkItemHref}` : `${groupPath}/${this.wtkContent.wtkName}/items`
-
-    // jwt
-    let token = this.wtkClass.getCookie("token");
-    let csrfCookie = this.wtkClass.getCookie("XSRF-COOKIE");
-    let myHeaders = new Headers();
-        // myHeaders.append('Content-Type', 'multipart/form-data; ');
-        // myHeaders.append('accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8');
-        myHeaders.append('Authorization', `Bearer ${token}`);
-        myHeaders.append('X-XSRF-TOKEN', `${csrfCookie}`);
     // cj
-    // TODO
+    // TODO:
     // getMetaData() from contentElement
     // no need for looping in position
+    // set position if new item
+    if (!this.editContent) {
+      // TODO: get cj items data in content-meta 
+      const cj = this.wtkContent.getCJ()
+      let cjPosition =
+        cj.collection.items[cj.collection.items.length - 1]
+          .data.find((val, key) => {
+            return val.name === "wtkPosition"
+          })
+      cjPosition = cjPosition ? cjPosition.value + 1 : 0
 
-    console.log('this.editContent', this.editContent)
-    let cj=this.wtkContent.getCJ()
-    let cjPosition = 0
-    if (cj.collection.items.length!=0) {
-      cjPosition = cj.collection.items[cj.collection.items.length-1].data.find((val, key) => {
-        console.log(val)
-        return val.name==="wtkPosition"
+      body.push({
+        name: "wtkPosition", value: cjPosition
       })
-      console.log(cjPosition)
-      cjPosition=this.editContent ? cjPosition.value : cjPosition.value+1
-      // cjPosition=1
     }
-    // body
-    // return
-    console.log(cjPosition)
-    let file = {
-      dom    : this.imgContFileInput,
-      binary : null
-    };
 
-    let reader = new FileReader();
-
-      file.binary = reader.result;
-    reader.addEventListener("load", function () {
-    });
-    if(file.dom.files[0]) {
-      reader.readAsBinaryString(file.dom.files[0]);
-    }
-    file.dom.addEventListener("change", function () {
-      if(reader.readyState === FileReader.LOADING) {
-        reader.abort();
-      }
-      
-      reader.readAsBinaryString(file.dom.files[0]);
-    });
-
-    // if(reader.readyState === FileReader.LOADING) {
-    //   reader.abort();
-    // }
-    // let file = reader.readAsBinaryString(wtkCont);
-        // console.log(file)
-
-    // let data=""
-    // data += "--" + boundary + "\r\n";
-
-    // // Describe it as form data
-    // data += 'content-disposition: form-data; '
-    // // Define the name of the form data
-    //       + 'name="'         + "wtkImgContent"          + '"; '
-    // // Provide the real name of the file
-    //       + 'filename="'     + wtkCont.name + '"\r\n';
-    // // And the MIME type of the file
-    // data += 'Content-Type: ' + wtkCont.type + '\r\n';
-
-    // // There's a blank line between the metadata and the data
-    // data += '\r\n';
-    
-    // // Append the binary data to our body's request
-    // data += file.binary + '\r\n';
-
-
-
-
-    // console.log(data)
-    let body = new FormData(evt.target)
-
-    let imgInfo=body.get('img')
-
-    let imgWidth=body.get('wtkWidth')=="" ? "auto" : body.get('wtkWidth') 
-    let imgHeight=body.get('wtkHeight')=="" ? "auto" : body.get('wtkHeight') 
-
-    console.log(imgHeight, imgWidth)
-
-    let bodyData=[{name:'wtkType', value:'img'}, {name:'wtkWidth', value:imgWidth}, {name:'wtkHeight', value:imgHeight}]
-
-    if (!this.editContent) { bodyData.push({name:'wtkPosition', value:cjPosition})}
-
-    // body.prepend('bodyData', JSON.stringify(bodyData))
-    console.log(body.get('img'))
-    console.log(body)
+    // img
+    const imgFormData = new FormData(evt.target)
+    const imgForm = new FormData()
+          imgForm.append('img', imgFormData.get('img'))
+    const imgInfo = imgForm.get('img')
 
     let metaWtkCont
-    let body2= new FormData()
     console.log(this.metaData)
     console.log(this.metaData.length)
-    if (this.metaData!=undefined && Object.keys(this.metaData).length!==0) {
-      metaWtkCont=this.metaData.data.find((val) => {
-        return val.name=="wtkCont"
+
+    if (this.metaData && Object.keys(this.metaData).length !== 0) {
+      metaWtkCont = this.metaData.data.find((val) => {
+        return val.name == "wtkCont"
       }).value
-      console.log(metaWtkCont)
-      console.log(imgInfo.name)
     }
-    if (imgInfo.name!=metaWtkCont && imgInfo.name!="") {
-      console.log(' ola')
-      bodyData.push({name:'wtkCont', value:imgInfo.name})
-      body2.append('img',body.get('img'))
+
+    const method = this.editContent ? 'PUT' : 'POST'
+    const groupPath = this.groupName == null ? 
+      'contents' : 'groups'
+    const path = this.editContent ? 
+      `${this.wtkClass.api}/${groupPath}/${this.wtkItemHref}` : 
+      `${this.wtkClass.api}/${groupPath}/${this.wtkContent.wtkName}/items`
+    const metaHeaders = new Headers();
+          metaHeaders.append('Content-Type', 'application/json');
+
+    // if img exists and is diferent than before
+    if (imgInfo.name != metaWtkCont && imgInfo.name != "") {
+      const response = await fetch(path, {
+        method: method,
+        body: imgInfo,
+        credentials :'same-origin'
+      }).catch(_ => {})
+      if (!response.ok) return this.wtkClass.toast(response.statusText)
+      const { imgItemUrl } = await response.json()
+
+      body.push(
+        { name: 'wtkCont', value: imgInfo.name }
+      )
     }
-    body2.append('bodyData', JSON.stringify(bodyData))
-    console.log(body2)
-    // ${this.wtkContent.wtkName}
-    console.log(path)
-    // return
-    // let conf=confirm("send?")
-    // if (!conf) { return }
+    // save img metadata
+    const response = await fetch(path, {
+      method: method,
+      body: JSON.stringify(body),
+      headers: metaHeaders,
+      credentials: 'same-origin'
+    }).catch(_ => { })
+    if (!response.ok) return this.wtkClass.toast(response.statusText)
 
-    fetch(`${this.wtkClass.api}/${path}`,{
-      method:method, 
-      body:body2,//JSON.stringify(body), 
-      headers:myHeaders
-    })
-    .then((data) => {
-      console.log(data)
-      console.log(data.headers.get('location'))
-      return data.headers.get('location')
-      // return data.json()
-    })
-    .then((location) => {
-      console.log(location)
+    const { location } = await response.json() //TODO: edit the {} to sute the architecture ... 
 
-      if (this.editContent) {
-        this.wtkItemContent.setSize({'wtkWidth':imgWidth, 'wtkHeight':imgHeight})
-        this.wtkClass.updateContentImgItem(location, this.wtkItemContent, 'img', groupPath)
-      }
-      else{
-        this.wtkClass.addContentItem(location, this.wtkContent, this.wtkContent.lastChild, 'img')
-      }
-      this._closeClick()
-      this.wtkContent.updateCJ(groupPath, this.wtkContent.wtkName)
-
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-      console.log(err)
-    })
+    if (this.editContent) {
+      this.wtkItemContent.setSize({'wtkWidth':imgWidth, 'wtkHeight':imgHeight})
+      this.wtkClass.updateContentImgItem(location, this.wtkItemContent, 'img', groupPath)
+    }
+    else{
+      this.wtkClass.addContentItem(location, this.wtkContent, this.wtkContent.lastChild, 'img')
+    }
+    this._closeClick()
+    this.wtkContent.updateCJ(groupPath, this.wtkContent.wtkName)
   }
   _closeClick(evt){
     // evt.preventDefault()
@@ -721,25 +609,12 @@ class wtkItemCtrl extends HTMLElement {
   }
   _itemUpClick(evt){
     evt.preventDefault()
-     // jwt
-    let token = this.wtkClass.getCookie("token");
-    let csrfCookie = this.wtkClass.getCookie("XSRF-COOKIE");
-    let myHeaders = new Headers();
-        myHeaders.append('Content-Type', 'application/json');
-        myHeaders.append('Authorization', `Bearer ${token}`);
-        myHeaders.append('X-XSRF-TOKEN', `${csrfCookie}`);
-
-    let item=this.wtkContent.getItemByID(this.wtkItemHref)
-    let cj=this.wtkContent.getCJ()
-
+    
+    const item = this.wtkContent.getItemByID(this.wtkItemHref)
+    const cj = this.wtkContent.getCJ()
+      
     let prevItem=item
-
-    // let nextItemCJ=cj.collection.items.find((val, key, list) => {
-    //   nextItem=list[key+1]
-    //   return val.href==this.wtkItemHref
-    // })
-
-    let prevItemCJ=cj.collection.items.find((val) => {
+    const prevItemCJ = cj.collection.items.find((val) => {
       let prevItemVisible=val.data.find((valItem) => {
         return valItem.name=="wtkVisible"
       })
@@ -751,6 +626,7 @@ class wtkItemCtrl extends HTMLElement {
     console.log(prevItem)
     console.log(item)
     console.log(prevItem.href==item.href)
+
     if (prevItem.href==item.href) { return }
     let prevItemPosition=prevItem.data.find((val) => {
       return val.name=="wtkPosition"
@@ -764,62 +640,67 @@ class wtkItemCtrl extends HTMLElement {
     prevItemPosition=prevItemPosition.value
     itemPosition=itemPosition.value
     itemType=itemType.value
-
+    
     console.log('prevItemPosition',prevItemPosition)
     console.log('itemPosition',itemPosition)
-
-    let bodyPrevItem=[{name:"wtkPosition", value:prevItemPosition}]
-    let bodyItem=[{name:"wtkPosition", value:itemPosition}]
-    let itemsToEdit=[
-      {href:item.href, body:bodyPrevItem},
-      {href:prevItem.href, body:bodyItem}
-    ]
+    
+    const prevItemBody = [{
+      name:"wtkPosition", value:prevItemPosition
+    }]
+    const itemBody=[{
+      name:"wtkPosition", value:itemPosition
+    }]
     // return
-    let path=this.groupName==null ? 'contents' : 'groups'
+    const itemPath = this.groupName==null ? 
+      `${this.wtkClass.api}/contents/${item.href}` : 
+      `${this.wtkClass.api}/groups/${item.href}`  
+    const prevItemPath = this.groupName == null ?
+      `${this.wtkClass.api}/contents/${prevItem.href}` :
+      `${this.wtkClass.api}/groups/${prevItem.href}`  
+      
+    const moveUpHeaders = new Headers();
+          moveUpHeaders.append('Content-Type', 'application/json');
 
-    let updateItems=(val) => {
-      fetch(`${this.wtkClass.api}/${path}/${val.href}`,{
-        method:'PUT', 
-        body:JSON.stringify(val.body), 
-        headers:myHeaders
-      })
-      .then((data) => {
-        console.log('this')
-        return data.headers.get('location')
-      })
-      .then((location) => {
-        if (location==this.wtkItemHref) { 
-          this.wtkClass.addContentItem(location, this.wtkContent, this.wtkItemELem.previousSibling, itemType)
-          this.wtkContent.updateCJ(path, this.wtkContent.wtkName)
-          this.parentNode.remove()
-          updateItems(itemsToEdit[1])
-        }
-        this.wtkContent.updateCJ(path, this.wtkContent.wtkName)
-      })
-      .catch((err) => {
-        console.log(err)
-        this.wtkClass.toast(err)
-      })
-    }
-    updateItems(itemsToEdit[0])
+    // first item
+    const itemResponse = await fetch(itemPath, {
+      method: 'PUT',
+      body: JSON.stringify(prevItemBody),
+      headers: moveUpHeaders
+    }).catch(_ => {})
+    if (!itemResponse.ok) return this.wtkClass.toast(itemResponse.statusText)
+    let { location } = await itemResponse.json()
+    
+      
+    // prev item
+    // if (location != this.wtkItemHref) { return }
+    const prevItemResponse = await fetch(prevItemPath, {
+      method: 'PUT',
+      body: JSON.stringify(itemBody),
+      headers: moveUpHeaders
+    }).catch(_ => { })
+    if (!prevItemResponse.ok) return this.wtkClass.toast(prevItemResponse.statusText)
+    let { location } = await prevItemResponse.json()
+
+    this.wtkContent.updateCJ(
+      this.groupName == null ? 'contents' : 'groups',
+      this.wtkContent.wtkName)
+
+    this.wtkClass.addContentItem(
+      location,
+      this.wtkContent,
+      this.wtkItemELem.previousSibling,
+      itemType)
+    this.parentNode.remove()
   }
   _itemDownClick(evt){
     evt.preventDefault()
-    // jwt
-    let token = this.wtkClass.getCookie("token");
-    let csrfCookie = this.wtkClass.getCookie("XSRF-COOKIE");
-    let myHeaders = new Headers();
-        myHeaders.append('Content-Type', 'application/json');
-        myHeaders.append('Authorization', `Bearer ${token}`);
-        myHeaders.append('X-XSRF-TOKEN', `${csrfCookie}`);
 
-    let item=this.wtkContent.getItemByID(this.wtkItemHref)
-    let cj=this.wtkContent.getCJ()
+    const item = this.wtkContent.getItemByID(this.wtkItemHref)
+    const cj = this.wtkContent.getCJ()
 
-    let nextItem=item
-
-    let nextItemCJ=cj.collection.items.find((val, key, list) => {
-      nextItem=list[key+1]
+    let nextItem = item
+    const nextItemCJ = cj.collection.items.find((val, key, list) => {
+      nextItem = list[key+1]
       return val.href==this.wtkItemHref
     })
     if (nextItem==undefined) { return }
@@ -836,104 +717,93 @@ class wtkItemCtrl extends HTMLElement {
     itemPosition=itemPosition.value
     itemType=itemType.value
 
-    let bodyNextItem=[{name:"wtkPosition", value:nextItemPosition}]
-    let bodyItem=[{name:"wtkPosition", value:itemPosition}]
-    let itemsToEdit=[
-      {href:item.href, body:bodyNextItem},
-      {href:nextItem.href, body:bodyItem}
-    ]
+    const nextItemBody = [{
+      name:"wtkPosition", value:nextItemPosition
+    }]
+    const itemBody = [{
+      name:"wtkPosition", value:itemPosition
+    }]
     console.log(this.wtkItemELem.nextSibling)
     // return
-    let path=this.groupName==null ? 'contents' : 'groups'
-    let updateItems=(val) => {
-      fetch(`${this.wtkClass.api}/${path}/${val.href}`,{
-        method:'PUT', 
-        body:JSON.stringify(val.body), 
-        headers:myHeaders
-      })
-      .then((data) => {
-        return data.headers.get('location')
-      })
-      .then((location) => {
-        if (location==this.wtkItemHref) { 
-          this.wtkClass.addContentItem(location, this.wtkContent, this.wtkItemELem.nextSibling.nextSibling, itemType)
-          this.wtkContent.updateCJ(path, this.wtkContent.wtkName)
-          this.parentNode.remove()
-          updateItems(itemsToEdit[1])
-        }
-        this.wtkContent.updateCJ(path, this.wtkContent.wtkName)
-      })
-      .catch((err) => {
-        console.log(err)
-        this.wtkClass.toast(err)
-      })
-    }
-    updateItems(itemsToEdit[0])
+    const itemPath = this.groupName==null ? 
+      `${this.wtkClass.api}/contents/${item.href}` :
+      `${this.wtkClass.api}/groups/${item.href}`
+    const nextItemPath = this.groupName == null ?
+      `${this.wtkClass.api}/contents/${nextItemPath.href}` :
+      `${this.wtkClass.api}/groups/${nextItemPath.href}`
+
+    const moveDownHeaders = new Headers();
+          moveDownHeaders.append('Content-Type', 'application/json');
+    // item
+    const itemResponse = await fetch(itemPath,{
+      method: 'PUT', 
+      body: JSON.stringify(nextItemBody), 
+      headers: moveDownHeaders
+    }).catch(_ => {})
+    if (!itemResponse.ok) return this.wtkClass.toast(itemResponse.statusText)
+    let { location } = await itemResponse.json()
+
+    // nextItem
+    const nextItemResponse = await fetch(nextItemPath, {
+      method: 'PUT',
+      body: JSON.stringify(itemBody),
+      headers: moveDownHeaders
+    }).catch(_ => { })
+    if (!nextItemResponse.ok) return this.wtkClass.toast(nextItemResponse.statusText)
+    let { location } = await nextItemResponse.json()
+
+    this.wtkContent.updateCJ(
+      this.groupName == null ? 'contents' : 'groups',
+      this.wtkContent.wtkName)
+    
+    this.wtkClass.addContentItem(
+      location, 
+      this.wtkContent, 
+      this.wtkItemELem.nextSibling.nextSibling, 
+      itemType)
+    this.parentNode.remove()
   }
   _itemTrashClick(evt){
-    // jwt
-    let token = this.wtkClass.getCookie("token");
-    let csrfCookie = this.wtkClass.getCookie("XSRF-COOKIE");
-    let myHeaders = new Headers();
-        myHeaders.append('Content-Type', 'application/json');
-        myHeaders.append('Authorization', `Bearer ${token}`);
-        myHeaders.append('X-XSRF-TOKEN', `${csrfCookie}`);
+    const trashHeaders = new Headers();
+          trashHeaders.append('Content-Type', 'application/json');
 
-    let path=this.groupName==null ? 'contents' : 'groups'
-    fetch(`${this.wtkClass.api}/${path}/${this.wtkItemHref}`,{
+    const path = this.groupName==null ? 
+        `${this.wtkClass.api}/contents/${this.wtkItemHref}`:
+        `${this.wtkClass.api}/groups/${this.wtkItemHref}`
+        
+    const response = await fetch(path,{
       method:'DELETE', 
-      headers:myHeaders
-    })
-    .then((data) => {
-      return data.json()
-    })
-    .then((cj) => {
-      console.log(cj)
-      this.parentNode.remove()
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-    })
+      headers:trashHeaders
+    }).catch(_ => {})
+    if (!response.ok) return this.wtkClass.toast(response.statusText)
+
+    const cj = await response.json()
+    this.parentNode.remove()
   }
   _tinymceLoaded(){
     // make shadow root
     // this.target=this.attachShadow({mode: 'open'});
     this.target=this
+    const htmlPath = `${this.wtkClass.base}/views/text-item-ctrl.html`
+    const cssPath = `${this.wtkClass.base}/css/text-item-ctrl.css`
 
-    let textHTML=document.createElement('div')
-    fetch(`${this.wtkClass.base}/views/text-item-ctrl.html`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      textHTML.innerHTML=data
-      this.target.appendChild(textHTML)
-      // window.tinymce.dom.Event.domLoaded = true;
-      tinymce.init({ selector:'#wtk__textItem' });
+    const htmlPromise = fetch(htmlPath).catch(_ => { })
+    const cssPromise = fetch(cssPath).catch(_ => { })
+    const [htmlResponse, cssResponse] = await Promise.all([htmlPromise, cssPromise])
 
-      this._wtkTextItemCtrlInit()
-      
-    })
-    .catch((err) => {
-      console.log(err)
-      this.wtkClass.toast(err)
-    })
+    if (!htmlResponse.ok || !cssResponse.ok) return this.wtkClass.toast("Ups! Něco se nepovedlo. Zkuste aktualizovat stránku.")
 
     // css
-    let css=document.createElement('style')
-    fetch(`${this.wtkClass.base}/css/text-item-ctrl.css`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      css.innerHTML = data
-      this.target.insertBefore( css, this.target.firstChild )
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-      console.log(err)
-      alert("Ups! Nepodařilo se nahrát styly pro tlacitko. Zkuste aktualizovat stránku.")
-    })
+    const css = document.createElement('style')
+    css.innerHTML = await cssResponse.text()
+    this.target.insertBefore(css, this.target.firstChild)
+
+    const textHTML = document.createElement('div')
+          textHTML.innerHTML = await htmlResponse.text()
+    this.target.appendChild(textHTML)
+
+    tinymce.init({ selector:'#wtk__textItem' });
+    this._wtkTextItemCtrlInit()
   }
 }
 customElements.define('wtk-item-ctrl', wtkItemCtrl);
@@ -951,35 +821,29 @@ class wtkGroupCtrl extends HTMLElement {
   _itemCtrlInit(){
     this.target = this.attachShadow({mode: 'open'});
     // css
-    let css=document.createElement('style')
-    fetch(`${this.wtkClass.base}/css/group-ctrl.css`)
-    .then((data) => {
-      return data.text()
-    })
-    .then((data) => {
-      css.innerHTML = data
-      this.target.insertBefore( css, this.target.firstChild )
-    })
-    .catch((err) => {
-      console.log(err)
-      this.wtkClass.toast(err)
-    })
+    const path = `${this.wtkClass.base}/css/group-ctrl.css`
+    const response = await fetch(path).catch(_ => {})
+    if (!response.ok) return this.wtkClass.toast(response.statusText)
+    
+    const css = document.createElement('style')
+          css.innerHTML = await response.text()
+    this.target.insertBefore( css, this.target.firstChild )
     // text icon
-    let editIcon=document.createElement('img')
-        editIcon.src=`${this.wtkClass.base}/icons/itemEdit.svg`
+    const editIcon=document.createElement('img')
+          editIcon.src=`${this.wtkClass.base}/icons/itemEdit.svg`
     // text button
-    let editButton=document.createElement('button')
-        editButton.appendChild(editIcon)
-        editButton.addEventListener('click', this._itemEditClick.bind(this))
+    const editButton=document.createElement('button')
+          editButton.appendChild(editIcon)
+          editButton.addEventListener('click', this._itemEditClick.bind(this))
     this.target.appendChild(editButton)
 
     // trash icon
-    let trashIcon=document.createElement('img')
-        trashIcon.src=`${this.wtkClass.base}/icons/itemTrash.svg`
+    const trashIcon=document.createElement('img')
+          trashIcon.src=`${this.wtkClass.base}/icons/itemTrash.svg`
     // trash button
-    let trashButton=document.createElement('button')
-        trashButton.appendChild(trashIcon)
-        trashButton.addEventListener('click', this._itemTrashClick.bind(this))
+    const trashButton=document.createElement('button')
+          trashButton.appendChild(trashIcon)
+          trashButton.addEventListener('click', this._itemTrashClick.bind(this))
     this.target.appendChild(trashButton)
   }
   _itemEditClick(evt){
@@ -992,29 +856,18 @@ class wtkGroupCtrl extends HTMLElement {
     document.body.appendChild(wtkAlocNewGroup)    
   }
   _itemTrashClick(evt){
-    // jwt
-    let token = this.wtkClass.getCookie("token");
-    let csrfCookie = this.wtkClass.getCookie("XSRF-COOKIE");
-    let myHeaders = new Headers();
-        myHeaders.append('Content-Type', 'application/json');
-        myHeaders.append('Authorization', `Bearer ${token}`);
-        myHeaders.append('X-XSRF-TOKEN', `${csrfCookie}`);
+    const trashHeaders = new Headers();
+          trashHeaders.append('Content-Type', 'application/json');
 
-    let path=this.groupName==null ? 'contents' : 'groups'
-    fetch(`${this.wtkClass.api}/groups/${this.wtkItemHref}`,{
+    const path = `${this.wtkClass.api}/groups/${this.wtkItemHref}`
+    const response = await fetch(path,{
       method:'DELETE',
-      headers:myHeaders
-    })
-    .then((data) => {
-      return data.json()
-    })
-    .then((cj) => {
-      console.log(cj)
-      this.parentNode.remove()
-    })
-    .catch((err) => {
-      this.wtkClass.toast(err)
-    })
+      headers:trashHeaders
+    }).catch(_ => {})
+    if (!response.ok) return this.wtkClass.toast(response.statusText)
+
+    const cj = await response.json()
+    this.parentNode.remove()
   }
 }
 customElements.define('wtk-group-ctrl', wtkGroupCtrl);

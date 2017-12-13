@@ -616,6 +616,7 @@ module.exports={
         return wtkIndex.editAlocData(alocData)
       })
       .then((alocData) => {
+        // TODO: resolve object everywhere
         return resolve(wtkName)
       })
       .catch((err) => {
@@ -738,7 +739,7 @@ module.exports={
         console.log(itemsData)
 
 
-        resolve(itemHref)
+        resolve({itemHref})
       })
       .catch((err) => {
         console.log(err)

@@ -95,10 +95,10 @@ class wtkAlocNewContent extends HTMLElement {
 
     // validate input on all elems on keyup/keydown
     let validateClass = new validateInput()
-    this.alocNewContForm.elements.forEach((val, key) => {
+    for (const val of this.alocNewContForm.elements) {
       val.addEventListener('keyup', validateClass._onKeyUp.bind(validateClass))
       val.addEventListener('keydown', validateClass._onKeyDown.bind(validateClass))
-    })
+    }
 
   }
   _initThumbnail(){
@@ -262,12 +262,12 @@ class wtkAlocNewContent extends HTMLElement {
   }
   async _submitAlocNewCont(evt){
     evt.preventDefault();
-    let target=evt.target
+    const target=evt.target
     
     const body = {}
-    let validForm=true;
+    let validForm = true;
     const validateClass = new validateInput()
-    for (let i = 0; i < this.alocNewContForm.elements.length; i++) {
+    for (const val of this.alocNewContForm.elements) {
       if (target.elements[i].type != 'submit' && 
           target.elements[i].type != 'file' && 
           target.elements[i].type != 'button') {

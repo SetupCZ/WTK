@@ -218,13 +218,13 @@ class wtkAlocNewGroup extends HTMLElement {
     console.log(target)
 
     let validateClass = new validateInput()
-    for (let i = 0; i < this.addNewAttrForm.elements.length; i++) {
-      if (target.elements[i].type!='submit') {
-        if (target.elements[i].name=="wtkAttrReq") {
-          target.elements[i].value=target.elements[i].checked?'required':''
+    for (val of this.addNewAttrForm.elements) {
+      if (val.type!='submit') {
+        if (val.name=="wtkAttrReq") {
+          val.value=val.checked?'required':''
         }
-        validForm=validateClass._validateInput(target.elements[i]);
-        body[target.elements[i].name]=target.elements[i].value;
+        validForm=validateClass._validateInput(val);
+        body[val.name]=val.value;
       }
     }
     console.log(body)
@@ -264,11 +264,11 @@ class wtkAlocNewGroup extends HTMLElement {
     let validForm = true;
 
     let validateClass = new validateInput()
-    for (let i = 0; i < this.alocNewGroupForm.elements.length; i++) {
-      if (target.elements[i].type!='submit' && 
-          target.elements[i].type!='button') {
-        validForm=validateClass._validateInput(target.elements[i]);
-        body[target.elements[i].name]=target.elements[i].value;
+    for (val of this.alocNewGroupForm.elements) {
+      if (val.type!='submit' && 
+          val.type!='button') {
+        validForm=validateClass._validateInput(val);
+        body[val.name]=val.value;
       }
     }
     if (!validForm) { return this.wtkClass.toast("invalid form") }

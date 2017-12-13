@@ -1,47 +1,7 @@
-class validateInput{
-  _validateInput(target){
-    let required=target.getAttribute('required');
-    let pattern=target.getAttribute('pattern');
-    let patternReg=new RegExp(pattern);
-    let requiredMsg=target.parentNode.querySelector('.errMsg.required');
-    let patternMsg=target.parentNode.querySelector('.errMsg.pattern');
-    //check required
-    console.log(target)
-    //if "" pattern must be opacity:0 too
-    if (target.value=="") { 
-      requiredMsg.style.opacity=1; 
-      patternMsg.style.opacity=0; 
-      target.style.borderColor='red';
-      return false; 
-    }
-    else{ 
-      requiredMsg.style.opacity=0; 
-      target.style.borderColor='rgba(0,0,0,0.1)';
-    }
-    if (pattern!=null && !patternReg.test(target.value)) { 
-      patternMsg.style.opacity=1; 
-      return false;
-    }
-    else{ 
-      patternMsg.style.opacity=0; 
-      target.style.borderColor='rgba(0,0,0,0.1)';
-      return true;
-    }
-  }
-  _onKeyDown(evt){
-    const target = evt.target;
-    //if TAB validate input
-    if (evt.keyCode==9) { this._validateInput(target); }
-    else{ clearTimeout(this.validTimeout); }
-  }
-  _onKeyUp(evt){
-    const target = evt.target;
-    clearTimeout(this.validTimeout);
-    this.validTimeout=setTimeout(()=>{
-      this._validateInput(target);
-    }, 500);
-  }
-}
+import validateInput from './wtkValidateInput.js'
+import wtk from './wtk.js'
+const validateClass = new validateInput()
+const wtkClass = new wtk()
 class wtkLogin {
   constructor(args) {
     this.loginForm=document.querySelector('#wtkLoginForm')
@@ -55,56 +15,40 @@ class wtkLogin {
 
     this.globalMsg=document.querySelector('#globalMsg')
 
-    let validateClass = new validateInput()
-    for (let i = 0; i < this.loginForm.elements.length; i++) {
-      this.loginForm[i].addEventListener('keyup', validateClass._onKeyUp.bind(validateClass))
-      this.loginForm[i].addEventListener('keydown', validateClass._onKeyDown.bind(validateClass))
+    for (const val of this.loginForm.elements) {
+      val.addEventListener('keyup', validateClass._onKeyUp.bind(validateClass))
+      val.addEventListener('keydown', validateClass._onKeyDown.bind(validateClass))
     }
   }
-  _submitLoginForm(evt){
+  async _submitLoginForm(evt){
     evt.preventDefault()
-    let target=evt.target
-    let validateClass=new validateInput()
-    let validForm=true;
-    let body={};
-    // let body=new FormData(evt.target)
-    for (let i = 0; i < this.loginForm.elements.length; i++) {
-      if (target.elements[i].type!='submit') {
-        // validForm=validateClass._validateInput(target.elements[i]);
-        body[target.elements[i].name]=target.elements[i].value;
+    const target=evt.target
+    const body = {};
+    let validForm = true;
+
+    for (const val of target.elements) {
+      if (val.type!='submit') {
+        validForm=validateClass._validateInput(val);
+        body[val.name]=val.value;
       }
     }
-    if (!validForm) { return alert("Některá pole jsou špatně vyplněna!") }
+    if (!validForm) { return wtkClass.toast("Některá pole jsou špatně vyplněna!") }
 
-    let pswdCrypted=CryptoJS.SHA256(body.wtkLoginPswd).toString(CryptoJS.enc.Hex);
-    console.log(pswdCrypted)
-    // body.set('wtkLoginPswd',pswdCrypted)
-    // console.log(body.get('wtkLoginPswd'))
-    body.wtkLoginPswd=pswdCrypted
-    let myHeaders = new Headers();
-        myHeaders.append('Content-Type', 'application/json');
-        // myHeaders.append('Content-Type', 'form-data; ');
-        console.log(JSON.stringify(body))
-    fetch(`/wtk/wtk-login`,{method:'POST', body: JSON.stringify(body), headers:myHeaders, credentials: 'same-origin'})
-    .then((data) => {
-      // console.log(data.json())
-      if (!data.ok) { throw Error(data.statusText); }
-      else{ return data.json() }
-    })
-    .then((res) => {
-      console.log(res)
-      // document.cookie='XSRF-COOKIE='+this.loginCSRF.value;
-      document.cookie='token='+res.token+'; expires=Thu, 18 Dec 2018 12:00:00 UTC; path=/';
-      document.cookie='userForWeb='+JSON.stringify(res.userForWeb)+'; expires=Thu, 18 Dec 2018 12:00:00 UTC; path=/';
+    const pswdCrypted = CryptoJS.SHA256(body.wtkLoginPswd).toString(CryptoJS.enc.Hex);
+    body.wtkLoginPswd = pswdCrypted
+    
+    const path = `/${wtkClass.openApi}/wtk-login`
+    let loginHeaders = new Headers();
+        loginHeaders.append('Content-Type', 'application/json');
 
-
-      setTimeout(function() { window.location='/' }, 2000);
-      
-    })
-    .catch((err) => {
-      console.log(err)
-      alert('Ups! Něco je špatně. Zkuste se přihlásit znovu.')
-    })
+    const response = await fetch(path,{
+      method:'POST', 
+      body: JSON.stringify(body), 
+      headers:myHeaders, 
+      credentials: 'same-origin'
+    }).catch(_ => {})
+    if (!response.ok) return wtkClass.toast(response.statusText)
+    window.location = '/'
   }
   _wrongUser(){
     // alert('Ups! Něco je špatně. Zkuste se přihlásit znovu.')
@@ -113,45 +57,33 @@ class wtkLogin {
     this.loginForm.style.display="none"
     this.wtkForgotPswdForm.style.display="block"
   }
-  _submitForgotPswd(evt){
+  async _submitForgotPswd(evt){
     evt.preventDefault()
-    let target=evt.target
-    let validateClass=new validateInput()
-    let validForm=true;
-    let body={};
-    // let body=new FormData(evt.target)
-    for (let i = 0; i < target.elements.length; i++) {
-      if (target.elements[i].type!='submit') {
-        // validForm=validateClass._validateInput(target.elements[i]);
-        body[target.elements[i].name]=target.elements[i].value;
+    const target=evt.target
+    const body = {};
+    let validForm = true;
+
+    for (const val of target.elements) {
+      if (val.type!='submit') {
+        validForm = validateClass._validateInput(val);
+        body[val.name]=val.value;
       }
     }
-    if (!validForm) { return alert("Některá pole jsou špatně vyplněna!") }
+    if (!validForm) { return wtkClass.toast("Některá pole jsou špatně vyplněna!") }
 
-    let myHeaders = new Headers();
-        myHeaders.append('Content-Type', 'application/json');
-        // myHeaders.append('Content-Type', 'form-data; ');
-    fetch(`/wtk/wtk-forgotPswd`,{method:'POST', body: JSON.stringify(body), headers:myHeaders})
-    .then((data) => {
-      return data.text() 
-    })
-    .then((res) => {
-      console.log(res)
-      // document.cookie='XSRF-COOKIE='+this.loginCSRF.value;
-      // document.cookie='token='+res.token+'; expires=Thu, 18 Dec 2018 12:00:00 UTC; path=/';
-      // document.cookie='userForWeb='+JSON.stringify(res.userForWeb)+'; expires=Thu, 18 Dec 2018 12:00:00 UTC; path=/';
-
-      // window.location='/'
-      this.globalMsg.innerText="Byl vám zaslán ověřovací E-mail."
-    })
-    .catch((err) => {
-      alert('Ups! Něco je špatně. Zkuste to znovu.')
-      console.log(err)
-    })
+    const path = `/${wtkClass.openApi}/wtk-forgotPswd`
+    let resPswdHeaders = new Headers();
+        resPswdHeaders.append('Content-Type', 'application/json');
+        // resPswdHeaders.append('Content-Type', 'form-data; ');
+    const response = await fetch(path, {
+      method:'POST', 
+      body: JSON.stringify(body), 
+      headers: resPswdHeaders
+    }).catch(_ => {})
+    if (!response.ok) return wtkClass.toast(response.statusText)
+    this.globalMsg.innerText = "Byl vám zaslán ověřovací E-mail."
   }
-  // methods
 }
-
 window.addEventListener('load', ()=>{
   new wtkLogin()
 })

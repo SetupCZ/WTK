@@ -259,6 +259,8 @@ router.put('/groups/:name/contents/:contName', upload.single('img'), function(re
       });
       
       return
+  if (img) return res.status(200).send({ wtkMetaThumbnail: `${imgDestination}/${img.originalname}` })
+  
   // return 
   // validate name 
   wtk.editContent(name+'/contents/'+contName, data, img)
@@ -409,10 +411,8 @@ router.put('/contents/:name', upload.single('img'), function(req, res, next) {
   let name=req.params.name
   let img=req.file
   let data=req.body
-      data=JSON.parse(data.bodyData)
-      console.log(data)
-      // return
-  // validate name 
+  if (img) return res.status(200).send({ wtkMetaThumbnail: `${imgDestination}/${img.originalname}` })
+  
   wtk.editContent(name, data, img)
   .then((data) => {
     return res.status(200).send(data)

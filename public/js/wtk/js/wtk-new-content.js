@@ -333,6 +333,7 @@ class wtkAlocNewContent extends HTMLElement {
       credentials: 'same-origin'
     }).catch(_ => {})
     if (!response.ok) return this.wtkClass.toast(response.statusText)
+    
     const { location } = await response.json() //TODO: edit the {} to sute the architecture ... same on line 339 
     
     // only in group whne editing 

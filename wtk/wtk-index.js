@@ -798,7 +798,28 @@ module.exports={
       return resolve(data)
     });
   },
+  createHAL: function (self, properties={}, links={}, embedded={}){
+    const HAL = {
+      _links:{
+        "self": {"href":self},
+        ...links
+      },
+      ...properties,
+      ...embedded
+    }
+    return HAL
+  },
+  renderGroupAttrs:function (groupAttrs) {
+    const groupAttributes = []
+    for (val in groupAttrs) {
+      groupAttributes.push(
+        this.createHAL(`${cjBase}${val.wtkAttrName}/`, val)
+      )
+    }
+    return groupAttributes
+  },
   createCjTemplate:function(wtkDir) {
+    
     // var cType = 'application/vnd.collection+json';
     // var pathfilter = '/favicon.ico /sortbyemail /sortbyname /filterbyname';
     let cj = {};
@@ -855,6 +876,7 @@ module.exports={
           {name:"wtkAttrRegex", value:val.wtkAttrRegex, prompt:"Regex"},
           {name:"wtkAttrReq", value:val.wtkAttrReq, prompt:"Req"},
 
+          // hal:
         
           // {name:"wtkMetaTitle", value:val.wtkMetaTitle, prompt:"id"},
           // {name:"wtkMetaDescription", value:val.wtkMetaDescription, prompt:"type"},

@@ -1,14 +1,14 @@
 'use strict';
-let express = require('express');
-let serverSettings = require('../wtk/serverSettings.json');
-let wtk = require('../wtk/wtk-ctrl.js');
-let wtkIndex = require('../wtk/wtk-index.js');
-let path = require('path');
-let imgDestination = path.resolve(__dirname, serverSettings.galeryPath)
-let multer  = require('multer')
-let storage = multer.diskStorage({
+const express = require('express');
+const serverSettings = require('../wtk/serverSettings.json');
+const wtk = require('../wtk/wtk-ctrl.js');
+const wtkIndex = require('../wtk/wtk-index.js');
+const path = require('path');
+const imgDestination = path.resolve(__dirname, serverSettings.galeryPath)
+const multer  = require('multer')
+const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    let path1=path.resolve(__dirname, serverSettings.galeryPath)
+    const path1=path.resolve(__dirname, serverSettings.galeryPath)
     // console.log('file destination', path1)
     cb(null, path1)
   },
@@ -20,127 +20,8 @@ let storage = multer.diskStorage({
     cb(null, file.originalname)
   }
 })
-let upload = multer({ storage: storage })
-// let multiparty = require('connect-multiparty');
-// let multipartyMiddleware = multiparty();
-let router = express.Router();
-// router.post('/saveNewCont', function(req, res, next) {
-//   let wtkData=req.body.wtkData;
-//   let wtkThumbnail=req.body.wtkData.wtkThumbnail;
-//   let wtkCont="";
-//   async.series({
-//     getAlocData: function(callback){
-//       wtk.getAlocData(callback);
-//     }
-//   },
-//   function(err, results) {
-//     if (err) { return res.send(400, err) };
-//     let getAlocData=results.getAlocData;
-//     console.log('getAlocData',getAlocData)
-//     if (getAlocData.alocData.length==0) { let lastID=0 }
-//     else{ let lastID=_.last(_.sortBy(getAlocData.alocData, 'wtkID')).wtkID+1 };
-//     async.series({
-//       addNewDir: function(callback){
-//         //callback(null)
-//         wtk.addNewDir(callback, wtkData.wtkDir, lastID);
-//       }
-//     },
-//     function(err, results) {
-//       if (err) { return res.send(400, err) };
-//       async.parallel({
-//         addNewContJson: function(callback){
-//           //callback(null)
-//           wtk.addNewContJson(callback, wtkData, wtkData.wtkDir, lastID);
-//         },
-//         addNewContHtml: function(callback){
-//           //callback(null)
-//           wtk.addNewContHtml(callback, wtkCont, wtkData.wtkDir, lastID);
-//         },
-//       },
-//       function(err, results) {
-//         console.log('err',err)
-//         if (err) { return res.send(400, err) };
-//         async.parallel({
-//           editAlocData: function(callback){
-//             //callback(null)
-//             getAlocData.alocData.push({
-//               "wtkName":wtkData.wtkName, 
-//               "wtkDir":wtkData.wtkDir+"/"+lastID, 
-//               "wtkID":lastID, 
-//               "wtkGroup":wtkData.wtkGroup
-//             });
-//             wtk.editAlocData(callback, getAlocData);
-//           }
-//         },
-//         function(err, results) {
-//           if (err) { return res.send(400, err) };
-//           console.log(results)
-//           return res.json(200, results);
-//         });
-//       });
-//     });
-//   });
-// });
-
-// router.post('/saveCont', function(req, res, next) {
-//   let wtkName=req.body.wtkName;
-//   let wtkCont=req.body.wtkCont;
-//   console.log('------------------name')
-//   console.log(wtkCont)
-//   async.series({
-//     getAlocDataByName: function(callback){
-//       wtk.getAlocDataByName(callback, wtkName);
-//     }
-//   },
-//   function(err, results) {
-//     if (err) { return res.send(400, err) };
-//     let getAlocDataByName=results.getAlocDataByName;
-//     if (getAlocDataByName.length==0) { return res.send(400, 'Error: Aloc Data is empty') };
-//     async.series({
-//       addNewContHtml: function(callback){
-//         let dir=getAlocDataByName.wtkDir.split("/")[0];
-//         wtk.addNewContHtml(callback, wtkCont, dir, getAlocDataByName.wtkID);
-//       },
-//     },
-//     function(err, results) {
-//       if (err) { return res.send(400, err) };
-//       return res.send(200, results);
-       
-//     }); 
-//   });
-// });
-// router.delete('/trashCont', function(req, res, next) {
-//   let wtkName=req.body.wtkName;
-//   async.series({
-//     getAlocData: function(callback){
-//       wtk.getAlocData(callback);
-//     }
-//   },
-//   function(err, results) {
-//     if (err) { return res.send(400, err) };
-//     let alocData=results.getAlocData.alocData;
-//     let wtkDir=_.findWhere(alocData, {wtkName:wtkName}).wtkDir;
-//     let getAlocData={alocData:_.without(alocData, _.findWhere(alocData, {wtkName:wtkName}))};
-
-//     console.log('newAlocData')
-//     console.log(getAlocData)
-//     async.series({
-//       dropCont: function(callback){
-//         wtk.dropCont(callback, wtkDir);
-//       },
-//       editAlocData: function(callback){
-//         //callback(null)
-//         wtk.editAlocData(callback, getAlocData);
-//       }
-//     },
-//     function(err, results) {
-//       if (err) { return res.send(400, err) };
-//       return res.send(200, results);
-       
-//     }); 
-//   });
-// });
-
+const upload = multer({ storage: storage })
+const router = express.Router();
 
 // vanila
 // admin
@@ -148,7 +29,6 @@ let router = express.Router();
 router.put('/user', function(req, res, next) {
   let user=req.user
   let data=req.body
-console.log(user)
   wtk.editUser(data, user)
   .then((data) => {
     return res.status(200).send(data)
@@ -162,31 +42,13 @@ console.log(user)
 // groups
 // new group
 router.post('/groups', function(req, res, next) {
-  let data=req.body
-  // validate name 
-  // console.log(typeof data)
-  // if (true) { data=JSON.parse(data) }
-    // console.log(data)
-  // return res.status(200).send(data)
-  console.log('***************************************')
-  console.log('***************************************')
-  console.log('***************************************')
-  wtkIndex.validateG(data).then((data) => {
-    console.log('validatedG Data: ')
-    console.log(data)
-  })
-  .catch((err) => {
-    console.log("err",err)
-  });
-  console.log('***************************************')
-  console.log('***************************************')
-  // return
+  const data = req.body
   wtk.addGroups(data)
   .then((data) => {
+    if (data==204) { return res.status(204).send() }
     return res.status(200).send(data)
   })
   .catch((err) => {
-    if (err==null) { return res.status(204).send(data) }
     return res.status(400).send(err)
   });
 });

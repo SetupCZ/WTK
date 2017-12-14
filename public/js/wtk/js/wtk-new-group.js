@@ -122,7 +122,7 @@ class wtkAlocNewGroup extends HTMLElement {
       this.target.querySelector('#wtk__closeAlocNewGroupBtn')
           closeAlocNewGroup.addEventListener('click', this._closeAlocNewGroupClick.bind(this))
   }
-  _initEditGroup(){
+  async _initEditGroup(){
     if (!this.editGroup) return 
     const path = `${this.wtkClass.apiOpen}/groups/${this.wtkGroupName}`
     const response = await fetch(path).catch(_ => {})
@@ -218,12 +218,13 @@ class wtkAlocNewGroup extends HTMLElement {
     console.log(target)
 
     let validateClass = new validateInput()
-    for (val of this.addNewAttrForm.elements) {
+    console.log(this.addNewAttrForm.elements);
+    for (let val of this.addNewAttrForm.elements) {
       if (val.type!='submit') {
         if (val.name=="wtkAttrReq") {
           val.value=val.checked?'required':''
         }
-        validForm=validateClass._validateInput(val);
+        // validForm=validateClass._validateInput(val);
         body[val.name]=val.value;
       }
     }
@@ -254,17 +255,18 @@ class wtkAlocNewGroup extends HTMLElement {
     this.groupAttrs.splice(attrPos, 1)
     console.log(this.groupAttrs)
   }
-  _submitAlocNewGroup(evt){
+  async _submitAlocNewGroup(evt){
     evt.preventDefault();
     const target=evt.target
-
+    console.log(this.groupAttrs);
+    // return
     const body = {}
           body.wtkName = this.wtkName
           body.groupAttrs = this.groupAttrs
     let validForm = true;
 
     let validateClass = new validateInput()
-    for (val of this.alocNewGroupForm.elements) {
+    for (let val of this.alocNewGroupForm.elements) {
       if (val.type!='submit' && 
           val.type!='button') {
         validForm=validateClass._validateInput(val);
@@ -279,16 +281,17 @@ class wtkAlocNewGroup extends HTMLElement {
         `${this.wtkClass.api}/groups`
 
     const metaHeaders = new Headers();
-          myHeaders.append('Content-Type', 'application/json');
+          metaHeaders.append('Content-Type', 'application/json');
     console.log(body)
 
     // return 
     const response = await fetch(path, {
       method:method, 
       body:JSON.stringify(body), 
-      headers:myHeaders,
+      headers:metaHeaders,
       credentials: 'same-origin'
     }).catch(_ => {})
+    console.log(response);
     if (!response.ok) return this.wtkClass.toast(response.statusText)
     const data = await response.json()
     console.log(data);

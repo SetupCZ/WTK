@@ -69,7 +69,7 @@ class wtkContentCtrl extends HTMLElement{
     }
     document.body.appendChild(wtkAlocNewCont)    
   }
-  _trashClick(evt){
+  async _trashClick(evt){
     const path = this.wtkGroupName==null ? 
         `${this.wtkClass.api}/contents/${this.wtkName}`: 
         `${this.wtkClass.api}/groups/${this.wtkName}`
@@ -347,7 +347,7 @@ class wtkNewImgItem extends HTMLElement {
     this.closeButton=this.querySelector('#wtk__imgItemCtrl__close')
     this.closeButton.addEventListener('click', this._closeClick.bind(this))
   }
-  _saveClick(evt){
+  async _saveClick(evt){
     evt.preventDefault()
 
     // body
@@ -607,7 +607,7 @@ class wtkItemCtrl extends HTMLElement {
       this._editImgItemInit()
     }
   }
-  _itemUpClick(evt){
+  async _itemUpClick(evt){
     evt.preventDefault()
     
     const item = this.wtkContent.getItemByID(this.wtkItemHref)
@@ -692,7 +692,7 @@ class wtkItemCtrl extends HTMLElement {
       itemType)
     this.parentNode.remove()
   }
-  _itemDownClick(evt){
+  async _itemDownClick(evt){
     evt.preventDefault()
 
     const item = this.wtkContent.getItemByID(this.wtkItemHref)
@@ -763,7 +763,7 @@ class wtkItemCtrl extends HTMLElement {
       itemType)
     this.parentNode.remove()
   }
-  _itemTrashClick(evt){
+  async _itemTrashClick(evt){
     const trashHeaders = new Headers();
           trashHeaders.append('Content-Type', 'application/json');
 
@@ -780,7 +780,7 @@ class wtkItemCtrl extends HTMLElement {
     const cj = await response.json()
     this.parentNode.remove()
   }
-  _tinymceLoaded(){
+  async _tinymceLoaded(){
     // make shadow root
     // this.target=this.attachShadow({mode: 'open'});
     this.target=this
@@ -818,7 +818,7 @@ class wtkGroupCtrl extends HTMLElement {
     this.wtkName=this.wtkGroup.getAttribute('wtk-name')
     this._itemCtrlInit()
   }
-  _itemCtrlInit(){
+  async _itemCtrlInit(){
     this.target = this.attachShadow({mode: 'open'});
     // css
     const path = `${this.wtkClass.base}/css/group-ctrl.css`
@@ -855,7 +855,7 @@ class wtkGroupCtrl extends HTMLElement {
         wtkAlocNewGroup.setAttribute('wtk-group-name', this.wtkName)
     document.body.appendChild(wtkAlocNewGroup)    
   }
-  _itemTrashClick(evt){
+  async _itemTrashClick(evt){
     const trashHeaders = new Headers();
           trashHeaders.append('Content-Type', 'application/json');
 

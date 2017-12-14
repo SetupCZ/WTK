@@ -250,50 +250,89 @@ module.exports={
       });
     });
   },
-  addGroups:function (formData) {
-    // validate input
-    // get aloc data
-    // get aloc data by name
+ addGroups: async function (formData) {
+    
     // check if exists
     // add new dir 
     // edit aloc data
     // add new metaData
     // return cj
-    console.log('*---------------*')
-
-    console.log(formData)
     // return
-    return new Promise((resolve, reject) => {
+    return new Promise(async(resolve, reject) => {
       let staleAlocData={};
-      let wtkDir
       let cjMetaData
       let cjItemsData
+      console.log('her');
+      // validate input
+      const vData = await wtkIndex.validateG(formData)/*.catch((err) => {
+        console.log(err)
+      })*/
+      console.log(vData);
+      return
+      if (!vData) return reject()
+      // get aloc data
+      // get aloc data by name
+      const alocDataPromise = wtkIndex.getAlocData()
+      const alocDataByNamePromise = 
+        wtkIndex.getAlocDataByName(vData.wtkName, true)
+      let [alocData, alocDataByName] = await Promise.all([
+        alocDataPromise, alocDataByNamePromise
+      ])
+      if (alocDataByName) return resolve(204)
+      if (!alocData) alocData = {alocData:[]}
 
-      wtkIndex.validateG(formData)
-      .then((data) => {
+      // set wtkDir
+      const wtkDir = vData.wtkName // <=prepsat!!!
 
-        let alocDataByName=wtkIndex.getAlocDataByName(formData.wtkName, true)
-        let alocData=wtkIndex.getAlocData()
-        return Promise.all([alocData, alocDataByName])
+      // push new alocData
+      alocData.alocData.push({
+        wtkName: vData.wtkName,
+        wtkDir: wtkDir,
+        wtkVisible: true,
+        wtkType: 'group',
+        wtkIndesrtDate: new Date()
       })
-      .then((data) => {
-        // check if alocData is empty
-        if (data[0]==null) { data.alocData={alocData:[]} }
-        // check if name exists
-        if (data[1]!=null) { throw('This name allready exists!') }
-        // save alocData if err
-        staleAlocData=data[0]
 
-        // set wtkDir
-        wtkDir=formData.wtkName // <=prepsat!!!
-        // push new alocData
-        data[0].alocData.push({
-          wtkName:formData.wtkName,
-          wtkDir:wtkDir,
-          wtkVisible:true,
-          wtkType:'group',
-          wtkIndesrtDate:new Date()
-        })
+      // save aloc data
+      const editAlocDataPromise = wtkIndex.editAlocData(alocData)
+      // crate new dir
+      const newDirPromise = wtkIndex.addNewDir(wtkDir)
+      const [editAlocData, newDir] = await Promise.all([
+        editAlocDataPromise, newDirPromise
+      ])
+
+      const halGroupAttr = 
+        wtkIndex.renderGroupAttrs(vData.groupAttrs)
+      const halMetaData = wtkIndex.createHAL(
+        wtkDir,
+        {
+          "groupAttributes": { halGroupAttr }
+        },
+        { 
+          "items": { "href": `${wtkDir}/${contents}` }
+        }
+      )
+
+      const halItemsData = wtkIndex.createHAL(
+        `${wtkDir}/${contents}`
+      )
+
+      const metaDataPromise = 
+        wtkIndex.addMetaData(halMetaData, wtkDir)
+      const itemsDataPromise = 
+        wtkIndex.addItemsData(halItemsData, wtkDir)
+      const [metaData, itemsData] = await Promise.all([
+        metaData, itemsData
+      ])
+      // const cjMetaData = wtkIndex.createCjTemplate(wtkDir)
+      // cjMetaData.collection.items = wtkIndex.renderItems_groupMetaData(formData.groupAttrs)
+      
+      // cjItemsData = wtkIndex.createCjTemplate(wtkDir + '/contents')
+      // cjItemsData.collection.items=wtkIndex.renderItems_contentItemsData([])
+      // let metaData = wtkIndex.addMetaData(cjMetaData, wtkDir)
+      // let itemsData = wtkIndex.addItemsData(cjItemsData, wtkDir)
+      // return Promise.all([metaData, itemsData])
+      .then((data) => {
         // groupMetaData=[
         //   {wtkMetaName:"wtkName", wtkMetaValue:"val.wtkMetaName", wtkMetaAttr:"id", wtkMetaAttrName:"name"},
 
@@ -317,21 +356,10 @@ module.exports={
         //   {wtkMetaName:"wtkMetaTwitterUrl", wtkMetaValue:"val.wtkMetaTwitterUrl", wtkMetaAttr:"twitter:url", wtkMetaAttrName:"name"},
           
         // ]
-        // edit aloc data
-        // crate new dir
-        let editAlocData=wtkIndex.editAlocData(data[0])
-        let newDir=wtkIndex.addNewDir(wtkDir)
-        console.log('ssssssssssssssssthis')
-        return Promise.all([editAlocData, newDir])
+        
       })
       .then((data) => {
-        cjMetaData=wtkIndex.createCjTemplate(wtkDir)
-        cjMetaData.collection.items=wtkIndex.renderItems_groupMetaData(formData.groupAttrs)
-        cjItemsData=wtkIndex.createCjTemplate(wtkDir+'/contents')
-        // cjItemsData.collection.items=wtkIndex.renderItems_contentItemsData([])
-        let metaData=wtkIndex.addMetaData(cjMetaData, wtkDir)
-        let itemsData=wtkIndex.addItemsData(cjItemsData, wtkDir)
-        return Promise.all([metaData, itemsData])
+        
       })
       .then((data) => {
         resolve(cjMetaData)

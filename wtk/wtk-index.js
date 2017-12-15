@@ -105,14 +105,15 @@ module.exports={
   getAlocData:function() {
     return new Promise((resolve, reject) => {
       console.log('inGetALocData');
-      if (alocDataGlobal.alocData != undefined) { console.log('cunt');return resolve(alocDataGlobal) }
+      if (alocDataGlobal.alocData != undefined) { return resolve(alocDataGlobal) }
       var filePath=path.resolve(__dirname, './alocData.json')
       fs.readFile(filePath, {encoding: 'utf8'}, function(err, data) {
-        if (err) { console.log('err');return reject(err); }
-        if (data==="") { console.log('sc');return resolve(alocDataGlobal) }
+        if (err) {return reject(err); }
+        console.log(data);
+        if (data==="") { return resolve(alocDataGlobal) }
         else { 
-          console.log('he');
           alocDataGlobal=JSON.parse(data); 
+          console.log('ss');
           return resolve(alocDataGlobal) };
       });
     })
@@ -124,8 +125,7 @@ module.exports={
         if (alocDataGlobal.alocData.length==0) { reject(null) }
         let alocDataByName=returnAlocDataByName(alocDataGlobal, wtkName);
         if (!alocDataByName) {
-          if (newCont) { console.log('gg');return resolve(null) }
-          console.log('1');
+          if (newCont) { return resolve(null) }
           return reject(null) 
         }
         return resolve(alocDataByName)
@@ -136,9 +136,8 @@ module.exports={
       fs.readFile(filePath, {encoding: 'utf8'}, function(err, data) {
         if (err) { return reject(err); }
         else{ 
-          console.log('2');
           alocDataGlobal=JSON.parse(data);
-          if (alocDataGlobal.alocData.length==0) { console.log('3');return resolve(null) }
+          if (alocDataGlobal.alocData.length==0) { return resolve(null) }
           let alocDataByName=returnAlocDataByName(alocDataGlobal, wtkName)
           if (!alocDataByName) { 
             if (newCont) { return resolve(null) }
@@ -221,6 +220,8 @@ module.exports={
     });
   },
   getVisibleItems(metaData){
+    console.log(metaData);
+    return metaData["_embedded"].items.map(val => { return val.wtkVisible } )
     let itemMetaData=[]
     metaData.collection.items.forEach((valI, key) => {
       let itemVisible=valI.data.find((valD) => {
@@ -234,15 +235,8 @@ module.exports={
     return metaData
   },
   sortItemsData(metaData){
-    return metaData.collection.items.sort((itemA, itemB) => {
-      let posA=itemA.data.find((val) => {
-        return val.name=="wtkPosition"
-      })
-      let posB=itemB.data.find((val) => {
-        return val.name=="wtkPosition"
-      })
-
-      return posA.value - posB.value
+    return metaData._embedded.items.sort((itemA, itemB) => {
+      return itemA.wtkPosition - itemB.wtkPosition
     })
   },
   dropItem(metaData, href){
@@ -585,7 +579,8 @@ module.exports={
         },
       }
 
-
+      return resolve(data)
+      // TODO: edit for object 
       let type=data.find((data) => {
         return data.name=="wtkType"
       }).value
@@ -680,10 +675,10 @@ module.exports={
       if ( !wtkMetaAuthorReg.test(data.wtkMetaAuthor) ) return reject("Content AUTHOR is wrong!")
       if ( !wtkMetaDescriptionReg.test(data.wtkMetaDescription) ) return reject("Content DESCRIPTION is wrong!")
       if ( !wtkMetaUrlReg.test(data.wtkMetaUrl) ) return reject("Content URL is wrong!")
-      if ( !wtkMetaOgLocaleReg.test(data.wtkMetaOgLocale) ) return reject("Content og:LOCALE is wrong!")
-      if ( !wtkMetaOgSitenameReg.test(data.wtkMetaOgSitename) ) return reject("Content og:SITE NAME is wrong!")
-      if ( !wtkMetaTwitterSiteReg.test(data.wtkMetaTwitterSite) ) return reject("Content twitter:SITE is wrong!")
-      if (!wtkMetaThumbnailReg.test(data.wtkMetaThumbnail)) return reject("Content twitter:SITE is wrong!")
+      if ( data.wtkMetaOgLocale!="" && !wtkMetaOgLocaleReg.test(data.wtkMetaOgLocale) ) return reject("Content og:LOCALE is wrong!")
+      if ( data.wtkMetaOgSitename != "" && !wtkMetaOgSitenameReg.test(data.wtkMetaOgSitename) ) return reject("Content og:SITE NAME is wrong!")
+      if ( data.wtkMetaTwitterSite != "" && !wtkMetaTwitterSiteReg.test(data.wtkMetaTwitterSite) ) return reject("Content twitter:SITE is wrong!")
+      if ( data.wtkMetaThumbnail != "" && !wtkMetaThumbnailReg.test(data.wtkMetaThumbnail)) return reject("Content twitter:SITE is wrong!")
 
       // test img
       if (img){
@@ -805,7 +800,7 @@ module.exports={
         ...links
       },
       ...properties,
-      ...embedded
+      _embedded: embedded
     }
     return HAL
   },

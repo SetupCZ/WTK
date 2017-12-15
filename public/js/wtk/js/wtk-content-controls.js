@@ -85,12 +85,13 @@ class wtkContentCtrl extends HTMLElement{
     this.parentNode.remove()
   }
   _newTextClick(evt){
-    try {
-      this.wtkClass._getTinyMCEJS()
+    this.wtkClass._getTinyMCEJS()
+    .then((response) => {
       this._tinymceLoaded()
-    } catch (err) {
+    }).catch((err) => {
+      console.log(err)
       this.wtkClass.toast(err)
-    }
+    })
   }
   _newImgClick(evt){
     let wtkImgItemElem=document.createElement('wtk-new-img-item')
@@ -143,9 +144,10 @@ class wtkNewTextItem extends HTMLElement {
 
     // html
     const textHTML = document.createElement('div')
-          textHTML = await htmlResponse.text()
+          textHTML.innerHTML = await htmlResponse.text()
     this.target.appendChild(textHTML)
-
+    
+    // window.tinymce.dom.Event.domLoaded = true;
     const textItem = this.target.querySelector('#wtk__textItem')
     tinymce.init({ target:textItem });
     
@@ -176,7 +178,7 @@ class wtkNewTextItem extends HTMLElement {
     
 
     const method = this.editContent ? 'PUT' : 'POST'
-    const groupPath = his.wtkGroupName == null ? 
+    const groupPath = this.wtkGroupName == null ? 
       'contents' : 'groups'
     this.wtkGroupName == null ? 'contents' : 'groups'
     const path = this.editContent ? 
@@ -188,25 +190,20 @@ class wtkNewTextItem extends HTMLElement {
 
     // body
     const textContent = tinyMCE.get('wtk__textItem').getContent();
-    const body = [
-      {name:'wtkCont', value:textContent}, 
-      {name:'wtkType', value:'text'}
-    ]
+    const body = {
+      wtkCont: textContent, 
+      wtkType: 'text'
+    }
 
     // set position if new item
     if (!this.editContent) {
       // TODO: get cj items data in content-meta 
       const cj = this.wtkContent.getCJ()
       let cjPosition =
-        cj.collection.items[cj.collection.items.length - 1]
-          .data.find((val, key) => {
-            return val.name === "wtkPosition"
-          })
-      cjPosition = cjPosition ? cjPosition.value + 1 : 0
+        cj._embedded.items[cj._embedded.items.length - 1]
+      cjPosition = cjPosition ? cjPosition.wtkPosition + 1 : 0
       
-      body.push({
-        name:"wtkPosition", value:cjPosition
-      })
+      body.wtkPosition = cjPosition
     }
 
     // return
@@ -859,14 +856,15 @@ class wtkGroupCtrl extends HTMLElement {
     const trashHeaders = new Headers();
           trashHeaders.append('Content-Type', 'application/json');
 
-    const path = `${this.wtkClass.api}/groups/${this.wtkItemHref}`
+    const path = `${this.wtkClass.api}/groups/${this.wtkName}`
     const response = await fetch(path,{
       method:'DELETE',
       headers:trashHeaders
     }).catch(_ => {})
     if (!response.ok) return this.wtkClass.toast(response.statusText)
 
-    const cj = await response.json()
+
+    // const cj = await response.json()
     this.parentNode.remove()
   }
 }

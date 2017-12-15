@@ -27,7 +27,7 @@ class wtkLogin {
     let validForm = true;
 
     for (const val of target.elements) {
-      if (val.type!='submit') {
+      if (val.type != 'submit' && val.type != 'button') {
         validForm=validateClass._validateInput(val);
         body[val.name]=val.value;
       }
@@ -37,14 +37,15 @@ class wtkLogin {
     const pswdCrypted = CryptoJS.SHA256(body.wtkLoginPswd).toString(CryptoJS.enc.Hex);
     body.wtkLoginPswd = pswdCrypted
     
-    const path = `/${wtkClass.openApi}/wtk-login`
+    const path = `${wtkClass.apiOpen}/wtk-login`
+    console.log(path);
     let loginHeaders = new Headers();
         loginHeaders.append('Content-Type', 'application/json');
 
     const response = await fetch(path,{
       method:'POST', 
       body: JSON.stringify(body), 
-      headers:myHeaders, 
+      headers: loginHeaders, 
       credentials: 'same-origin'
     }).catch(_ => {})
     if (!response.ok) return wtkClass.toast(response.statusText)
@@ -71,7 +72,7 @@ class wtkLogin {
     }
     if (!validForm) { return wtkClass.toast("Některá pole jsou špatně vyplněna!") }
 
-    const path = `/${wtkClass.openApi}/wtk-forgotPswd`
+    const path = `${wtkClass.apiOpen}/wtk-forgotPswd`
     let resPswdHeaders = new Headers();
         resPswdHeaders.append('Content-Type', 'application/json');
         // resPswdHeaders.append('Content-Type', 'form-data; ');

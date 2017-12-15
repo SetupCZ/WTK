@@ -115,10 +115,10 @@ router.get('/groups/:name/contents', function(req, res, next) {
   // wtk.getContents(name)
   wtk.getItemsDataByName(name, false)
   .then((data) => {
+    if (data == 204) { return res.status(204).send() }
     return res.status(200).send(data)
   })
   .catch((err) => {
-    if (err==null) { return res.status(204).send() }
     return res.status(400).send(err)
   });
 });

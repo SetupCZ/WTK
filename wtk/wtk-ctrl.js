@@ -231,9 +231,10 @@ module.exports={
       });
     });
   },
-
   getGroups:function() {
     return new Promise((resolve, reject) => {
+      // TODO: show only visible items 
+
       wtkIndex.getAlocData()
       .then((alocData) => {
         let groups = wtkIndex.getGroups()
@@ -250,119 +251,87 @@ module.exports={
       });
     });
   },
- addGroups: async function (formData) {
-    
-    // check if exists
-    // add new dir 
-    // edit aloc data
-    // add new metaData
-    // return cj
-    // return
-    return new Promise(async(resolve, reject) => {
-      let staleAlocData={};
-      let cjMetaData
-      let cjItemsData
-      console.log('her');
+  addGroups: async function (formData) {
+    return new Promise(async (resolve, reject) => {
+
       // validate input
-      const vData = await wtkIndex.validateG(formData)/*.catch((err) => {
-        console.log(err)
-      })*/
-      console.log(vData);
-      return
-      if (!vData) return reject()
       // get aloc data
       // get aloc data by name
-      const alocDataPromise = wtkIndex.getAlocData()
-      const alocDataByNamePromise = 
-        wtkIndex.getAlocDataByName(vData.wtkName, true)
-      let [alocData, alocDataByName] = await Promise.all([
-        alocDataPromise, alocDataByNamePromise
-      ])
-      if (alocDataByName) return resolve(204)
-      if (!alocData) alocData = {alocData:[]}
-
-      // set wtkDir
-      const wtkDir = vData.wtkName // <=prepsat!!!
-
-      // push new alocData
-      alocData.alocData.push({
-        wtkName: vData.wtkName,
-        wtkDir: wtkDir,
-        wtkVisible: true,
-        wtkType: 'group',
-        wtkIndesrtDate: new Date()
+      // check if exists
+      // add new dir 
+      // edit aloc data
+      // add new metaData
+      // return cj
+      // return
+      let wtkDir
+      let cjMetaData
+      let cjItemsData
+      let vData = {}
+      let groupMetaData = {}
+      wtkIndex.validateG(formData)
+      .then((vGroup) => {
+        vData = vGroup
+        const alocDataPromise = wtkIndex.getAlocData()
+        const alocDataByNamePromise = wtkIndex.getAlocDataByName(vData.wtkName, true)
+        return Promise.all([alocDataPromise, alocDataByNamePromise])
       })
+      .then(([alocData, alocDataByName]) => {
+        // check if alocData is empty
+        if (alocData == null) { alocData.alocData = { alocData: [] } }
+        // check if name exists
+        if (alocDataByName != null) { throw ('This name allready exists!') }
 
-      // save aloc data
-      const editAlocDataPromise = wtkIndex.editAlocData(alocData)
-      // crate new dir
-      const newDirPromise = wtkIndex.addNewDir(wtkDir)
-      const [editAlocData, newDir] = await Promise.all([
-        editAlocDataPromise, newDirPromise
-      ])
-
-      const halGroupAttr = 
-        wtkIndex.renderGroupAttrs(vData.groupAttrs)
-      const halMetaData = wtkIndex.createHAL(
-        wtkDir,
-        {
-          "groupAttributes": { halGroupAttr }
-        },
-        { 
-          "items": { "href": `${wtkDir}/${contents}` }
+        // set wtkDir
+        wtkDir = vData.wtkName // <=prepsat!!!
+        // push new alocData
+        groupMetaData = {
+          wtkName: vData.wtkName,
+          wtkDir: wtkDir,
+          wtkVisible: true,
+          wtkType: 'group',
+          wtkInsertDate: new Date()
         }
-      )
-
-      const halItemsData = wtkIndex.createHAL(
-        `${wtkDir}/${contents}`
-      )
-
-      const metaDataPromise = 
-        wtkIndex.addMetaData(halMetaData, wtkDir)
-      const itemsDataPromise = 
-        wtkIndex.addItemsData(halItemsData, wtkDir)
-      const [metaData, itemsData] = await Promise.all([
-        metaData, itemsData
-      ])
-      // const cjMetaData = wtkIndex.createCjTemplate(wtkDir)
-      // cjMetaData.collection.items = wtkIndex.renderItems_groupMetaData(formData.groupAttrs)
-      
-      // cjItemsData = wtkIndex.createCjTemplate(wtkDir + '/contents')
-      // cjItemsData.collection.items=wtkIndex.renderItems_contentItemsData([])
-      // let metaData = wtkIndex.addMetaData(cjMetaData, wtkDir)
-      // let itemsData = wtkIndex.addItemsData(cjItemsData, wtkDir)
-      // return Promise.all([metaData, itemsData])
-      .then((data) => {
-        // groupMetaData=[
-        //   {wtkMetaName:"wtkName", wtkMetaValue:"val.wtkMetaName", wtkMetaAttr:"id", wtkMetaAttrName:"name"},
-
-        //   {wtkMetaName:"wtkMetaTitle", wtkMetaValue:"val.wtkMetaTitle", wtkMetaAttr:"id", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaDescription", wtkMetaValue:"val.wtkMetaDescription", wtkMetaAttr:"type", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaAuthor", wtkMetaValue:"val.wtkMetaAuthor", wtkMetaAttr:"content", wtkMetaAttrName:"name"},
-
-        //   {wtkMetaName:"wtkMetaOgUrl", wtkMetaValue:"val.wtkMetaOgUrl", wtkMetaAttr:"og:url", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaOgType", wtkMetaValue:"val.wtkMetaOgType", wtkMetaAttr:"og:type", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaOgLocale", wtkMetaValue:"val.wtkMetaOgLocale", wtkMetaAttr:"og:locale", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaOgImage", wtkMetaValue:"val.wtkMetaOgImage", wtkMetaAttr:"og:image", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaOgTitle", wtkMetaValue:"val.wtkMetaOgTitle", wtkMetaAttr:"og:title", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaOgSiteName", wtkMetaValue:"val.wtkMetaOgSiteName", wtkMetaAttr:"og:site_name", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaOgDescription", wtkMetaValue:"val.wtkMetaOgDescription", wtkMetaAttr:"og:description", wtkMetaAttrName:"name"},
-
-        //   {wtkMetaName:"wtkMetaTwitterCard", wtkMetaValue:"val.wtkMetaTwitterCard", wtkMetaAttr:"twitter:card", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaTwitterSite", wtkMetaValue:"val.wtkMetaTwitterSite", wtkMetaAttr:"twitter:site", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaTwitterTitle", wtkMetaValue:"val.wtkMetaTwitterTitle", wtkMetaAttr:"twitter:title", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaTwitterDescription", wtkMetaValue:"val.wtkMetaTwitterDescription", wtkMetaAttr:"twitter:description", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaTwitterImage", wtkMetaValue:"val.wtkMetaTwitterImage", wtkMetaAttr:"twitter:image", wtkMetaAttrName:"name"},
-        //   {wtkMetaName:"wtkMetaTwitterUrl", wtkMetaValue:"val.wtkMetaTwitterUrl", wtkMetaAttr:"twitter:url", wtkMetaAttrName:"name"},
-          
-        // ]
-        
+        alocData.alocData.push(groupMetaData)
+        // edit aloc data
+        // crate new dir
+        const editAlocDataPromise = wtkIndex.editAlocData(alocData)
+        const newDirPromise = wtkIndex.addNewDir(wtkDir)
+        return Promise.all([editAlocDataPromise, newDirPromise])
       })
-      .then((data) => {
-        
+      .then(([editAlocData, newDir]) => {
+        const halMetaData = wtkIndex.createHAL(
+          wtkDir,
+          {
+            "groupAttributes": vData.groupAttrs,
+            "wtkVisible": groupMetaData.wtkVisible,
+            "wtkInsertDate": groupMetaData.wtkInsertDate
+          },
+          {
+            "items": { "href": `${wtkDir}/contents` }
+          },
+          {
+            "items":[]
+          }
+        )
+
+        const halItemsData = wtkIndex.createHAL(
+          `${wtkDir}/contents`,
+          {},
+          {},
+          {
+            "items":[]
+          }
+        )
+        console.log(halMetaData);
+        console.log(halItemsData);
+        const metaDataPromise =
+          wtkIndex.addMetaData(halMetaData, wtkDir)
+        const itemsDataPromise =
+          wtkIndex.addItemsData(halItemsData, wtkDir)
+        return Promise.all([metaDataPromise, itemsDataPromise])
       })
-      .then((data) => {
-        resolve(cjMetaData)
+      .then(([metaData, itemsData]) => {
+        resolve(metaData)
       })
       .catch((err) => {
         console.log(err)
@@ -373,19 +342,22 @@ module.exports={
   editGroup:function(wtkName, formData){
     return new Promise((resolve, reject) => {
       let selfDir
+      let vData
       wtkIndex.validateG(formData)
-      .then((data) => {
-        // validatedFormData=data
+      .then((vGroup) => {
+        console.log(vGroup);
+        vData = vGroup
         return wtkIndex.getAlocDataByName(wtkName)
       })
       .then((alocData) => {
-        selfDir=alocData.wtkDir
-        return wtkIndex.getMetaDataByDir(alocData.wtkDir)
+        selfDir = alocData.wtkDir
+        return wtkIndex.getMetaDataByDir(selfDir)
       })
       .then((metaData) => {
+        
         console.log('metadata',metaData)
-        metaData.collection.items=wtkIndex.renderItems_groupMetaData(formData.groupAttrs)
-        return wtkIndex.addMetaData(metaData, metaData.collection.href)
+        metaData.groupAttributes = formData.groupAttrs
+        return wtkIndex.addMetaData(metaData, metaData._links.self.href)
       })
       .then((cj) => {
         return resolve(cj)
@@ -395,6 +367,31 @@ module.exports={
       });
     });
   },
+  dropGroup:function(wtkName) {
+    return new Promise((resolve, reject) => {
+      let selfDir
+      return wtkIndex.getAlocData()
+      .then((alocData) => {
+        console.log(alocData);
+        for (let val of alocData.alocData) {
+          console.log(val);
+          if (val.wtkName == wtkName) {
+            val.wtkVisible = false
+            break
+          }
+        }
+        return wtkIndex.editAlocData(alocData)
+      })
+      .then((response) => {
+        return resolve()
+      })
+      .catch((err) => {
+        console.log(err)
+        return reject(err)
+      })
+    })
+  },
+  // TODO: 
   addContentToGroup:function(wtkName, location){
     return new Promise((resolve, reject) => {
       wtkIndex.getAlocDataByName(wtkName)
@@ -424,8 +421,66 @@ module.exports={
       });
     });
   },
+  // TODO: 
   editContentInGroup:function(wtkName, location){
     let editedMetaItem=wtkIndex.editItem(metaData, itemHref, validatedFormData)
+  },
+  getContentsMetaData: function (vData) {
+    return {
+      "wtkMetaName": {
+        wtkMetaValue: vData.wtkMetaName, wtkMetaAttr: "id", wtkMetaAttrName: "name"
+      },
+      "wtkMetaTitle": {
+        wtkMetaValue: vData.wtkMetaTitle, wtkMetaAttr: "id", wtkMetaAttrName: "name"
+      },
+      "wtkMetaDescription": {
+        wtkMetaValue: vData.wtkMetaDescription, wtkMetaAttr: "type", wtkMetaAttrName: "name"
+      },
+      "wtkMetaAuthor": {
+        wtkMetaValue: vData.wtkMetaAuthor, wtkMetaAttr: "content", wtkMetaAttrName: "name"
+      },
+      "wtkMetaThumbnail": {
+        wtkMetaValue: vData.wtkMetaThumbnail, wtkMetaAttr: "content", wtkMetaAttrName: "name"
+      },
+
+      "wtkMetaOgUrl": {
+        wtkMetaValue: vData.wtkMetaUrl, wtkMetaAttr: "og:url", wtkMetaAttrName: "name"
+      },
+      "wtkMetaOgType": {
+        wtkMetaValue: "website", wtkMetaAttr: "og:type", wtkMetaAttrName: "name"
+      },
+      "wtkMetaOgLocale": {
+        wtkMetaValue: vData.wtkMetaOgLocale, wtkMetaAttr: "og:locale", wtkMetaAttrName: "name"
+      },
+      "wtkMetaOgImage": {
+        wtkMetaValue: vData.wtkMetaThumbnail, wtkMetaAttr: "og:image", wtkMetaAttrName: "name"
+      },
+      "wtkMetaOgTitle": {
+        wtkMetaValue: vData.wtkMetaTitle, wtkMetaAttr: "og:title", wtkMetaAttrName: "name"
+      },
+      "wtkMetaOgSiteName": {
+        wtkMetaValue: vData.wtkMetaOgSiteName, wtkMetaAttr: "og:site_name", wtkMetaAttrName: "name"
+      },
+      "wtkMetaOgDescription": {
+        wtkMetaValue: vData.wtkMetaDescription, wtkMetaAttr: "og:description", wtkMetaAttrName: "name"
+      },
+
+      "wtkMetaTwitterCard": {
+        wtkMetaValue: "summary", wtkMetaAttr: "twitter:card", wtkMetaAttrName: "name"
+      },
+      "wtkMetaTwitterSite": {
+        wtkMetaValue: vData.wtkMetaSite, wtkMetaAttr: "twitter:site", wtkMetaAttrName: "name"
+      },
+      "wtkMetaTwitterTitle": {
+        wtkMetaValue: vData.wtkMetaTitle, wtkMetaAttr: "twitter:title", wtkMetaAttrName: "name"
+      },
+      "wtkMetaTwitterDescription": {
+        wtkMetaValue: vData.wtkMetaDescription, wtkMetaAttr: "twitter:description", wtkMetaAttrName: "name"
+      },
+      "wtkMetaTwitterImage": {
+        wtkMetaValue: vData.wtkMetaThumbnail, wtkMetaAttr: "twitter:image", wtkMetaAttrName: "name"
+      },
+    }
   },
   getContents:function (wtkName) {
     return new Promise((resolve, reject) => {
@@ -464,96 +519,80 @@ module.exports={
     // return
     return new Promise((resolve, reject) => {
       let staleAlocData={};
-      let wtkDir
+      let selfDir
       let cjMetaData
       let cjItemsData
       let formMetaData
-
+      let vData
+      let contentMetaData
       wtkIndex.validateC(formData, imgFile)
-      .then(async (data) => {
-        let alocDataByName=await wtkIndex.getAlocDataByName(formData.wtkMetaName, true)
-        let alocData=await wtkIndex.getAlocData()
-        console.log(alocDataByName);
-        console.log(alocData);
-        return Promise.all([alocData, alocDataByName])
+      .then((vCont) => {
+        vData = vCont
+        const alocDataPromise = wtkIndex.getAlocData()
+        const alocDataByNamePromise = 
+          wtkIndex.getAlocDataByName(vData.wtkMetaName, true)
+        return Promise.all([alocDataPromise, alocDataByNamePromise])
       })
-      .then((data) => {
-        console.log(data);
+      .then(([alocData, alocDataByName]) => {
         // check if alocData is empty
-        if (data[0]==null) { data.alocData={alocData:[]} }
+        if (alocData == null) { alocData = {alocData:[]} }
         // check if name exists
-        if (data[1]!=null) { throw('This name allready exists!') }
+        if (alocDataByName != null) { throw('This name allready exists!') }
         // save alocData if err
-        staleAlocData=data[0]
-
-        // set wtkDir
-        console.log('----------------------------------------------------------------')
-        console.log('----------------------------------------------------------------')
-        console.log('----------------------------------------------------------------')
-        console.log(formData)
-        wtkDir=formData.wtkMetaName.replace('contents/','') 
-        console.log('----------------------------------------------------------------')
-        console.log(formData)
+        selfDir = vData.wtkMetaName.replace('contents/','') 
 
         // push new alocData
-        data[0].alocData.push({
-          wtkName:formData.wtkMetaName,
-          wtkDir:wtkDir,
-          wtkVisible:true,
-          wtkType:'content',
-          wtkIndesrtDate:new Date()
-        })
-        let wtkThumbnail
-        if (imgFile) {
-          // wtkThumbnail=`${settings.galeryPublicPath}/${imgFile.originalname}`
+        contentMetaData = {
+          wtkName: vData.wtkMetaName,
+          wtkDir: selfDir,
+          wtkVisible: true,
+          wtkType: 'content',
+          wtkInsertDate: new Date()
         }
-        formMetaData=[
-          {wtkMetaName:"wtkMetaName", wtkMetaValue:formData.wtkMetaName, wtkMetaAttr:"id", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkVisible", wtkMetaValue:true, wtkMetaAttr:"", wtkMetaAttrName:"Visible"},
+        alocData.alocData.push(contentMetaData)
 
-          {wtkMetaName:"wtkMetaTitle", wtkMetaValue:formData.wtkMetaTitle, wtkMetaAttr:"id", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaDescription", wtkMetaValue:formData.wtkMetaDescription, wtkMetaAttr:"type", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaAuthor", wtkMetaValue:formData.wtkMetaAuthor, wtkMetaAttr:"content", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaThumbnail", wtkMetaValue:formData.wtkMetaThumbnail, wtkMetaAttr:"content", wtkMetaAttrName:"name"},
-
-          {wtkMetaName:"wtkMetaOgUrl", wtkMetaValue:formData.wtkMetaUrl, wtkMetaAttr:"og:url", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgType", wtkMetaValue:"website", wtkMetaAttr:"og:type", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgLocale", wtkMetaValue:formData.wtkMetaOgLocale, wtkMetaAttr:"og:locale", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgImage", wtkMetaValue:formData.wtkMetaThumbnail, wtkMetaAttr:"og:image", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgTitle", wtkMetaValue:formData.wtkMetaTitle, wtkMetaAttr:"og:title", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgSiteName", wtkMetaValue:formData.wtkMetaOgSiteName, wtkMetaAttr:"og:site_name", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgDescription", wtkMetaValue:formData.wtkMetaDescription, wtkMetaAttr:"og:description", wtkMetaAttrName:"name"},
-
-          {wtkMetaName:"wtkMetaTwitterCard", wtkMetaValue:"summary", wtkMetaAttr:"twitter:card", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaTwitterSite", wtkMetaValue:formData.wtkMetaSite, wtkMetaAttr:"twitter:site", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaTwitterTitle", wtkMetaValue:formData.wtkMetaTitle, wtkMetaAttr:"twitter:title", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaTwitterDescription", wtkMetaValue:formData.wtkMetaDescription, wtkMetaAttr:"twitter:description", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaTwitterImage", wtkMetaValue:formData.wtkMetaThumbnail, wtkMetaAttr:"twitter:image", wtkMetaAttrName:"name"},
-          
-        ]
-        if (formData.groupAttrs!=undefined) {
-          formMetaData=formMetaData.concat(formData.groupAttrs)
-        }
+        formMetaData = this.getContentsMetaData(vData)
         // edit aloc data
         // crate new dir
-        let editAlocData=wtkIndex.editAlocData(data[0])
-        let newDir=wtkIndex.addNewDir(wtkDir)
-        return Promise.all([editAlocData, newDir])
+        let editAlocDataPromise = wtkIndex.editAlocData(alocData)
+        let newDirPromise = wtkIndex.addNewDir(selfDir)
+        return Promise.all([editAlocDataPromise, newDirPromise])
       })
-      .then((data) => {
-        console.log(data)
-        console.log("formData",formData.wtkMetaName)
-        cjMetaData=wtkIndex.createCjTemplate(formData.wtkMetaName)
-        cjMetaData.collection.items=wtkIndex.renderItems_contentMetaData(formMetaData)
-        cjItemsData=wtkIndex.createCjTemplate(formData.wtkMetaName+'/items')
-        // cjItemsData.collection.items=wtkIndex.renderItems_contentItemsData([])
-        let metaData=wtkIndex.addMetaData(cjMetaData, wtkDir)
-        let itemsData=wtkIndex.addItemsData(cjItemsData, wtkDir)
-        return Promise.all([metaData, itemsData])
+      .then(([alocData, newDir]) => {
+        const halMetaData = wtkIndex.createHAL(
+          selfDir,
+          {
+            "groupAttributes": vData.groupAttrs?vData.groupAttrs:[],
+            "wtkVisible": contentMetaData.wtkVisible,
+            "wtkInsertDate": contentMetaData.wtkInsertDate,
+            ...formMetaData
+          },
+          {
+            "items": { "href": `${selfDir}/items` }
+          },
+          {
+            "items": []
+          }
+        )
+
+        const halItemsData = wtkIndex.createHAL(
+          `${selfDir}/items`,
+          {},
+          {},
+          {
+            "items": []
+          }
+        )
+        console.log(halMetaData);
+        console.log(halItemsData);
+        const metaDataPromise =
+          wtkIndex.addMetaData(halMetaData, selfDir)
+        const itemsDataPromise =
+          wtkIndex.addItemsData(halItemsData, selfDir)
+        return Promise.all([metaDataPromise, itemsDataPromise])
       })
-      .then((data) => {
-        console.log(cjMetaData.collection.href)
-        resolve({location:cjMetaData.collection.href})
+      .then(([metaData,itemsData]) => {
+        resolve({location:metaData._links.self.href})
       })
       .catch((err) => {
         console.log(err)
@@ -563,70 +602,29 @@ module.exports={
   },
   editContent:function(wtkName, formData, imgFile){
     return new Promise((resolve, reject) => {
-      let validatedFormData
+      let vData
       let selfDir
-      let location
-      let cjMetaData
       let formMetaData
-      console.log(formData)
       wtkIndex.validateC(formData, imgFile)
-      .then((data) => {
-        validatedFormData=data
+      .then((vCont) => {
+        vData=vCont
         return wtkIndex.getAlocDataByName(wtkName)
       })
       .then((alocData) => {
-        selfDir=alocData.wtkDir
-        return wtkIndex.getMetaDataByDir(alocData.wtkDir)
+        selfDir = alocData.wtkDir
+        return wtkIndex.getMetaDataByDir(selfDir)
       })
       .then((metaData) => {
-        let wtkThumbnailItem=metaData.collection.items.find((data) => {
-          return data.href=="wtkMetaThumbnail/"
-        })
-        let wtkThumbnail=wtkThumbnailItem.data.find((data) => {
-          return data.name=="wtkMetaValue"
-        }).value
-        location=metaData.collection.href
-        if (imgFile) {
-          // console.log('ola')
-          wtkThumbnail=`${settings.galeryPublicPath}/${imgFile.originalname}`
+        // formMetaData = this.getContentsMetaData(vData)
+
+        for( let key in vData) {
+          metaData[key] = vData[key]
         }
 
-        formMetaData=[
-          {wtkMetaName:"wtkMetaName", wtkMetaValue:metaData.collection.href, wtkMetaAttr:"id", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkVisible", wtkMetaValue:true, wtkMetaAttr:"", wtkMetaAttrName:"Visible"},
-
-          {wtkMetaName:"wtkMetaTitle", wtkMetaValue:formData.wtkMetaTitle, wtkMetaAttr:"id", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaDescription", wtkMetaValue:formData.wtkMetaDescription, wtkMetaAttr:"type", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaAuthor", wtkMetaValue:formData.wtkMetaAuthor, wtkMetaAttr:"content", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaThumbnail", wtkMetaValue:wtkThumbnail, wtkMetaAttr:"content", wtkMetaAttrName:"name"},
-
-          {wtkMetaName:"wtkMetaOgUrl", wtkMetaValue:formData.wtkMetaUrl, wtkMetaAttr:"og:url", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgType", wtkMetaValue:"website", wtkMetaAttr:"og:type", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgLocale", wtkMetaValue:formData.wtkMetaOgLocale, wtkMetaAttr:"og:locale", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgImage", wtkMetaValue:wtkThumbnail, wtkMetaAttr:"og:image", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgTitle", wtkMetaValue:formData.wtkMetaTitle, wtkMetaAttr:"og:title", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgSiteName", wtkMetaValue:formData.wtkMetaOgSitename, wtkMetaAttr:"og:site_name", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaOgDescription", wtkMetaValue:formData.wtkMetaDescription, wtkMetaAttr:"og:description", wtkMetaAttrName:"name"},
-
-          {wtkMetaName:"wtkMetaTwitterCard", wtkMetaValue:"summary", wtkMetaAttr:"twitter:card", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaTwitterSite", wtkMetaValue:formData.wtkMetaTwitterSite, wtkMetaAttr:"twitter:site", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaTwitterTitle", wtkMetaValue:formData.wtkMetaTitle, wtkMetaAttr:"twitter:title", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaTwitterDescription", wtkMetaValue:formData.wtkMetaDescription, wtkMetaAttr:"twitter:description", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaTwitterImage", wtkMetaValue:wtkThumbnail, wtkMetaAttr:"twitter:image", wtkMetaAttrName:"name"},
-          {wtkMetaName:"wtkMetaTwitterUrl", wtkMetaValue:formData.wtkMetaUrl, wtkMetaAttr:"twitter:url", wtkMetaAttrName:"name"},
-          
-        ]
-        if (formData.groupAttrs!=undefined) {
-          formMetaData=formMetaData.concat(formData.groupAttrs)
-        }
-
-        cjMetaData=wtkIndex.createCjTemplate(metaData.collection.href)
-        cjMetaData.collection.items=wtkIndex.renderItems_contentMetaData(formMetaData)
-        // cjItemsData.collection.items=wtkIndex.renderItems_contentItemsData([])
-        return wtkIndex.addMetaData(cjMetaData, selfDir)
+        return wtkIndex.addMetaData(metaData, selfDir)
       })
       .then((cj) => {
-        return resolve(location)
+        return resolve({ location: metaData._links.self.href})
       })
       .catch((err) => {
         return reject(err)
@@ -637,15 +635,18 @@ module.exports={
     return new Promise((resolve, reject) => {
       wtkIndex.getAlocData()
       .then((alocData) => {
-        alocData.alocData.find((data) => {
-          return data.wtkName==wtkName
-        }).wtkVisible=false
+        for (let val of alocData.alocData) {
+          if (val.wtkName == wtkName) {
+            val.wtkVisible = false
+            break
+          }
+        }
 
         return wtkIndex.editAlocData(alocData)
       })
       .then((alocData) => {
         // TODO: resolve object everywhere
-        return resolve(wtkName)
+        return resolve()
       })
       .catch((err) => {
         return reject(err)
@@ -696,78 +697,60 @@ module.exports={
     // get metaData by name
     // pridat do metaData
     // vytvorit soubor html
-      let validatedFormData
+      let vData
       let itemHref
       let selfDir
+      let itemMetaData
       console.log('wtkImgCont',wtkImgCont)
       wtkIndex.validateI(formData, wtkImgCont)
-      .then((data) => {
-        validatedFormData=data
-        console.log(data)
+      .then((vItem) => {
+        vData = vItem
         return wtkIndex.getAlocDataByName(wtkName)
       })
       .then((alocData) => {
-        selfDir=alocData.wtkDir
-        return wtkIndex.getItemsDataByDir(alocData.wtkDir)
+        selfDir = alocData.wtkDir
+        return wtkIndex.getItemsDataByDir(selfDir)
       })
       .then((itemsData) => {
         console.log(itemsData)
-        console.log('-----------------------------------------')
-        console.log('validatedFormData',validatedFormData)
-        let itemsDataObj={
-          wtkID:new Date().getTime(),
-          wtkType:validatedFormData.wtkType,
-          wtkCont:validatedFormData.wtkCont,
-          wtkPosition:validatedFormData.wtkPosition,
-          wtkWidth:validatedFormData.wtkWidth,
-          wtkHeight:validatedFormData.wtkHeight,
-          wtkVisible:true,
-          wtkName:wtkName,
-          wtkIndesrtDate:new Date(),
-          wtkEditDate:new Date(),
+        
+        itemMetaData = {
+          wtkID: new Date().getTime(),
+          wtkType: vData.wtkType,
+          wtkCont: vData.wtkCont,
+          wtkPosition: vData.wtkPosition,
+          wtkWidth: vData.wtkWidth,
+          wtkHeight: vData.wtkHeight,
+          wtkVisible: true,
+          wtkName: wtkName,
+          wtkIndesrtDate: new Date(),
+          wtkEditDate: new Date(),
         }
-        validatedFormData.forEach((val, key) => {
-          itemsDataObj[val.name]=val.value
-        })
-        console.log('----------------------------------')
-        console.log('validatedFormData',validatedFormData)
-        console.log('itemsDataObj',itemsDataObj)
-        console.log('----------------------------------')
-
-        itemHref=`${wtkName}/items/${itemsDataObj.wtkID}`
-
-
-        let renderedItems=wtkIndex.renderItems_contentItemsData([itemsDataObj])
-        console.log('renderedItems',renderedItems.data)
+        itemHref = `${wtkName}/items/${itemMetaData.wtkID}`
+        const halItemsData = wtkIndex.createHAL(
+          itemHref,
+          {
+            ...itemMetaData
+          }
+        )
+        itemsData._embedded.items.push(halItemsData)
 
 
-        // metaData.collection.items=renderedItems
-        itemsData.collection.items=itemsData.collection.items.concat(renderedItems)
-        console.log('itemsDataitemsData',itemsData.collection.items)
 
-        let editedItemsData=wtkIndex.addItemsData(itemsData, selfDir)
+        // return
 
-        console.log(itemsDataObj.wtkType)
-        let wtkCont
-        if (itemsDataObj.wtkType=="img") {
-          return new Promise((resolve, reject) => {
-            resolve('null')
-          });
-          // wtkCont=wtkIndex.addImgItem(wtkImgCont, selfDir.href, itemsDataObj.wtkID)
-        }
-        if (itemsDataObj.wtkType=="text") {
-          wtkCont=wtkIndex.addTextItem(itemsDataObj, selfDir)
+
+        const editItemPromiseChain = [
+          wtkIndex.addItemsData(itemsData, selfDir)
+        ]
+        if (vData.wtkType=="text") {
+          editItemPromiseChain.push(wtkIndex.addTextItem(itemMetaData, selfDir))
         }
 
-        return Promise.all([editedItemsData, wtkCont])
+        return Promise.all(editItemPromiseChain)
       })
-      .then((pAllData) => {
-        let itemsData=pAllData[0]
-        let wtkCont=pAllData[1]
-        console.log(itemsData)
-
-
-        resolve({itemHref})
+      .then(([editedItemsData, textContent]) => {
+        resolve({location:itemHref})
       })
       .catch((err) => {
         console.log(err)
@@ -918,27 +901,32 @@ module.exports={
         return wtkIndex.getItemsDataByDir(alocData.wtkDir)
       })
       .then((itemsData) => {
-        let visibleItemsData=wtkIndex.getVisibleItems(itemsData)
-        console.log(visibleItemsData)
+        itemsData["_embedded"].items = wtkIndex.getVisibleItems(itemsData)
+        // TODO: visit sort
         if (sort) {
-          let sortedItemsData=wtkIndex.sortItemsData(visibleItemsData)
-          visibleItemsData.collection.items=sortedItemsData
+          let sortedItemsData = wtkIndex.sortItemsData(itemsData)
+          console.log(sortedItemsData);
+          // visibleItemsData.collection.items=sortedItemsData
         }
-        resolve(visibleItemsData)
+        return resolve(itemsData)
       })
       .catch((err) => {
         console.log(err)
-        reject(err)
+        return reject(err)
       });
     });
   },
   getMetaDataByName:function (name) {
     return new Promise((resolve, reject) => {
+      console.log('hns');
       wtkIndex.getAlocDataByName(name)
       .then((alocData) => {
+        
         return wtkIndex.getMetaDataByDir(alocData.wtkDir)
       })
       .then((metaData) => {
+        
+        console.log(metaData);
         // let visibleMetaData=wtkIndex.getVisibleItems(metaData)
         // let sortedMetaData=wtkIndex.sortMetaData(visibleMetaData)
         // visibleMetaData.collection.items=sortedMetaData

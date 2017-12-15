@@ -462,29 +462,32 @@ class wtkContentElem extends HTMLElement{
     })
   }
   _appendWtkContentItemsData(cj, name){
-    cj.collection.items.forEach((val, key) => {
-
-      let wtkWidth=val.data.find((data) => {
-        return data.name=="wtkWidth"
-      })
-      let wtkHeight=val.data.find((data) => {
-        return data.name=="wtkHeight"
-      })
+    cj._embedded.items.forEach((val, key) => {
+      // TODO: revisit 
+      let wtkWidth=val.wtkWidth
+    
+      let wtkHeight=val.wtkHeight
+  
       let imgSize
       if (wtkWidth!=undefined && wtkHeight!=undefined) {
-        imgSize = {wtkWidth:wtkWidth.value, wtkHeight:wtkHeight.value}
+        imgSize = {wtkWidth:wtkWidth, wtkHeight:wtkHeight}
       }
-      let wtkType=val.data.find((data) => {
-        return data.name=="wtkType"
-      })
+      let wtkType=val.wtkType
+      
       // console.log(wtkType)
-      this.wtkClass.addContentItem(val.href, this.target, null, wtkType.value, imgSize, val)
+      this.wtkClass.addContentItem(val._links.self.href, this.target, null, wtkType, imgSize, val)
       // let wtkContItem=document.createElement('wtk-content-item')
       //     wtkContItem.setAttribute('wtk-item-href', val.href)
       //     wtkContItem.setAttribute('wtk-content-name', name)
       //     console.log(wtkContItem)
       // this.target.appendChild(wtkContItem)
     })
+    if (this.wtkClass.user) {
+      this.wtkClass._fetchWtkDep(
+        `${this.wtkClass.base}/js/wtk-content-controls.js`,
+        'wtk-content-ctrl',
+        this.target)
+    }
   }
   async _getContentData(name){
     // get new content if name is not set and user is logged in
@@ -515,13 +518,6 @@ class wtkContentElem extends HTMLElement{
     const cj = await response.json()
     this._appendWtkContentItemsData(cj, this.wtkName);
     this.setCJ(cj)
-    
-    if (this.wtkClass.user) {
-      this.wtkClass._fetchWtkDep(
-        `${this.wtkClass.base}/js/wtk-content-controls.js`,
-        'wtk-content-ctrl',
-        this.target)
-    }
   }
 }
 customElements.forcePolyfill = true;
@@ -582,7 +578,7 @@ class wtkContentMetaElem extends  HTMLElement{
   _visibleItems(items, wtkGroupName){
     return new Promise((resolve, reject) => {
         
-      if (wtkGroupName==null) { return resolve(items) }
+      if (!wtkGroupName) { return resolve(items) }
       fetch(`${this.wtkClass.apiOpen}/groups/${wtkGroupName}`)
       .then((data) => {
         return data.json()
@@ -617,7 +613,7 @@ class wtkContentMetaElem extends  HTMLElement{
           if (formMetaData[key]!=undefined) {
             return itemsToSend.push(val)
           }
-          let item=cj.collection.items.find((data) => {
+          let item=cj._embedded.items.find((data) => {
             return data.href==val.href
           })
           if (item!=undefined) {
@@ -659,7 +655,7 @@ class wtkContentMetaElem extends  HTMLElement{
 
     const cj = await response.json()
     this.setCJ(cj)
-    const visibleItems = await this._visibleItems(cj.collection.items, this.wtkGroupName).catch((err) => {
+    const visibleItems = await this._visibleItems(cj._embedded.items, this.wtkGroupName).catch((err) => {
       console.log(err)
       this.wtkClass.toast(err)
     })
@@ -690,6 +686,7 @@ class wtkGroupElem extends HTMLElement{
     this._getGroupData(this.wtkName)
   }
   async _getGroupData(wtkName){
+    console.log(this.wtkClass.user);
     if (!this.wtkName && this.wtkClass.user) {
       this.wtkClass._fetchWtkDep(
         `${this.wtkClass.base}/js/wtk-new-group.js`,
@@ -713,20 +710,19 @@ class wtkGroupElem extends HTMLElement{
     if (response.status == 204) return //TODO: set function to show empty 
 
     const cj = await response.json()
+    console.log(cj);
     this._appendWtkGroupItemsData(cj);
     
-    if (this.wtkClass.user) {
-      this.wtkClass._fetchWtkDep(
-        `${this.wtkClass.base}/js/wtk-content-controls.js`,
-        'wtk-content-ctrl',
-        this.target)
-    }
+    // if (this.wtkClass.user) {
+    //   
+    // }
   }
   _appendWtkGroupItemsData(cj){
     // console.log(this.wtkName)
     // if (cj.collection.items.length==0) {
     // }
-    cj.collection.items.forEach((val, key) => {
+    console.log(cj);
+    cj["_embedded"].items.forEach((val, key) => {
       let wtkContElem=document.createElement('wtk-content')
           wtkContElem.setAttribute('wtk-name', val.href)
           wtkContElem.setAttribute('wtk-ingroup', this.wtkName)
@@ -738,6 +734,8 @@ class wtkGroupElem extends HTMLElement{
           wtkContElem.setAttribute('wtk-name', "")
           wtkContElem.setAttribute('wtk-ingroup', this.wtkName)
       this.target.appendChild(wtkContElem)
+
+      this.wtkClass._fetchWtkDep(`${this.wtkClass.base}/js/wtk-content-controls.js`)
 
       let wtkGroupCtrlElem=document.createElement('wtk-group-ctrl')
       this.insertBefore(wtkGroupCtrlElem, this.firstChild)
@@ -787,19 +785,14 @@ class wtkGroupMetaElem extends HTMLElement{
     const cj = await response.json()
     this._appendWtkGroupItemsMetaData(cj);
 
-    if (this.wtkClass.user) {
-      this.wtkClass._fetchWtkDep(
-        `${this.wtkClass.base}/js/wtk-content-controls.js`,
-        'wtk-content-ctrl',
-        this.target)
-    }
+    
   }
   _appendWtkGroupItemsMetaData(cj){
     // console.log(this.wtkName)
     // if (cj.collection.items.length==0) {
     // }
     console.log(this.wtkMetaTemplate) 
-    cj.collection.items.forEach((val, key) => {
+    cj._embedded.items.forEach((val, key) => {
       let wtkContElem=this.wtkMetaTemplate.querySelector('wtk-content-meta') || this.wtkMetaTemplate.querySelector('wtk-content')
           wtkContElem.setAttribute('wtk-name', val.href)
           wtkContElem.setAttribute('wtk-ingroup', this.wtkName)
@@ -817,8 +810,8 @@ class wtkGroupMetaElem extends HTMLElement{
           wtkContElem.setAttribute('wtk-ingroup', this.wtkName)
           // wtkContElem.innerHTML=this.wtkMetaTemplate
       this.target.appendChild(wtkContElem)
-
-
+      
+      this.wtkClass._fetchWtkDep(`${this.wtkClass.base}/js/wtk-content-controls.js`)
       let wtkGroupCtrlElem=document.createElement('wtk-group-ctrl')
       this.insertBefore(wtkGroupCtrlElem, this.firstChild)
     }
@@ -1003,7 +996,7 @@ class wtkSearchElem extends HTMLElement {
     cjList.forEach((cj, key) => {
       let stHtml=document.createElement('div')
           stHtml.innerHTML=this.wtkSTHtml
-      this.wtkClass.bindDataToTemplate(cj.collection.items, stHtml)
+      this.wtkClass.bindDataToTemplate(cj._embedded.items, stHtml)
       this.wtkSearchTemplate.innerHTML+=stHtml.innerHTML
       // let newTemplateChild=document.createElement(this.wtkSearchTemplate.firstChild.tagName.toLowerCase())
           // liNew.innerHTML=li.innerHTML

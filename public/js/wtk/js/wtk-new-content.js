@@ -268,11 +268,11 @@ class wtkAlocNewContent extends HTMLElement {
     let validForm = true;
     const validateClass = new validateInput()
     for (const val of this.alocNewContForm.elements) {
-      if (target.elements[i].type != 'submit' && 
-          target.elements[i].type != 'file' && 
-          target.elements[i].type != 'button') {
-        validForm=validateClass._validateInput(target.elements[i]);
-        body[target.elements[i].name]=target.elements[i].value;
+      if (val.type != 'submit' && 
+          val.type != 'file' && 
+          val.type != 'button') {
+        validForm=validateClass._validateInput(val);
+        body[val.name]=val.value;
       }
     }
     if (!validForm) { return this.wtkClass.toast("invalid form") }

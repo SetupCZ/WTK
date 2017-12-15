@@ -56,28 +56,31 @@ router.post('/groups', function(req, res, next) {
 router.put('/groups/:name', function(req, res, next) {
   let data=req.body
   let name=req.params.name
-  console.log('***************************************')
-  console.log('***************************************')
-  console.log('***************************************')
-  wtkIndex.validateG(data).then((data) => {
-    console.log('validatedG Data: ')
-    console.log(data)
-  })
-  .catch((err) => {
-    console.log("err",err)
-  });
-  
-  // return
+
   // validate name 
   wtk.editGroup(name, data)
   .then((data) => {
+    if (data==204) { return res.status(204).send(data) }
     return res.status(200).send(data)
   })
   .catch((err) => {
-    if (err==null) { return res.status(204).send(data) }
     return res.status(400).send(err)
   });
 });
+// delete group
+router.delete('/groups/:name', function (req, res, next) {
+  let name = req.params.name
+  wtk.dropGroup(name)
+  .then((data) => {
+    if (data == 204) { return res.status(204).send(data) }
+    return res.status(200).send(data)
+  })
+  .catch((err) => {
+    return res.status(400).send(err)
+  });
+
+});
+
 // new content in group
 router.post('/groups/:name/contents', function(req, res, next) {
   let data=req.body
@@ -304,32 +307,18 @@ router.delete('/contents/:name', function(req, res, next) {
 
 // new item
 router.post('/contents/:name/items',upload.single('img'), function(req, res, next) {
-  console.log('------------------------------------------')
-
   let data=req.body
   let img=req.file
   let name=req.params.name
-  // validate name
-  console.log(req.hmultiparteaders)
-  console.log('img',img) 
-  console.log('data',data) 
-  if (data.bodyData!=undefined) { data=JSON.parse(data.bodyData) }
-  console.log(data[0])
 
-  // let dirty = 'some really tacky HTML';
-  // let clean = sanitizeHtml(dirty);
-  // return 
-
-  // return res.status(200).send(data)
+  if (img) return res.status(200).send({ imgContent: `${imgDestination}/${img.originalname}` })
+  
   wtk.addItem(name, data, img)
   .then((data) => {
-    console.log(data)
-    res.location(data)
-    return res.status(201).send()
+    if (data == 204) { return res.status(204).send() }
+    return res.status(200).send(data)
   })
   .catch((err) => {
-    if (err==null) { console.log('___________________null_________________')}
-    if (err==null) { return res.status(204).send(data) }
     return res.status(400).send(err)
   });
 });

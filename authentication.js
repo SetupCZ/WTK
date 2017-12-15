@@ -80,6 +80,7 @@ exports.setTokens = async (accessToken, refreshToken, userId, res) => {
   res.cookie('Authorization', `Bearer ${accessToken}`, { httpOnly: true }) //secure:true > uses https
   res.cookie('accessToken', `${accessToken}`, { httpOnly: true })
   res.cookie('refreshToken', `${refreshToken}`, { httpOnly: true })
+  res.cookie('userForWeb', `${userId}`, { })
   // save user
   const user = await this.getUser(userId)
         user.refreshToken = refreshToken

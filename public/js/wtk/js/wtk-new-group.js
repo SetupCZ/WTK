@@ -94,10 +94,10 @@ class wtkAlocNewGroup extends HTMLElement {
     
     // validate input on all elems on keyup/keydown
     let validateClass = new validateInput()
-    this.alocNewGroupForm.elements.forEach((val, key) => {
+      for (let val in this.alocNewGroupForm.elements) {
       val.addEventListener('keyup', validateClass._onKeyUp.bind(validateClass))
       val.addEventListener('keydown', validateClass._onKeyDown.bind(validateClass))
-    })
+    }
   }
   _initAttrOptions(){
     const attrOptions = [
@@ -127,18 +127,14 @@ class wtkAlocNewGroup extends HTMLElement {
     const path = `${this.wtkClass.apiOpen}/groups/${this.wtkGroupName}`
     const response = await fetch(path).catch(_ => {})
     if (!response.ok) return this.wtkClass.toast(response.statusText)
-    const cj = await data.json()
+    const cj = await response.json()
     this._setGroupMetaData(cj)
   }
   _setGroupMetaData(cj){
     console.log(cj)
     // this.newGroupWrapper.querySelector('input[name="wtkName"]').value=this.wtkGroupName
-    cj.collection.items.forEach((val, key) => {
-      let body={}
-      val.data.forEach((val, key) => {
-        body[val.name]=val.value
-      })
-      this._updateAttrs(body)
+    cj.groupAttributes.forEach((val, key) => {
+      this._updateAttrs(val)
     })
   }
   _changeAttrType(evt){

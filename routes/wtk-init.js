@@ -1,18 +1,15 @@
 'use strict';
-var express = require('express');
-var expressJwt=require('express-jwt');
-var jwt=require('jsonwebtoken');
-var CryptoJS = require("crypto-js")
-var userSettings = require("../wtk/userSettings.json")
-var serverSettings = require("../wtk/serverSettings.json")
-var wtkIndex = require('../wtk/wtk-index.js');
+const express = require('express');
+const expressJwt=require('express-jwt');
+const jwt=require('jsonwebtoken');
+const CryptoJS = require("crypto-js")
+const userSettings = require("../wtk/userSettings.json")
+const serverSettings = require("../wtk/serverSettings.json")
+const wtkIndex = require('../wtk/wtk-index.js');
 const { generateTokens, setTokens, getUser } = require('../authentication');
 
-// var async = require('async');
-// var _ = require('underscore');
-var wtk = require('../wtk/wtk-ctrl.js');
-var router = express.Router();
-/* GET home page. */
+const wtk = require('../wtk/wtk-ctrl.js');
+const router = express.Router();
 
 
 router.get('/wtk-login', function(req, res, next) {
@@ -21,7 +18,7 @@ router.get('/wtk-login', function(req, res, next) {
 router.get('/wtk-admin', function(req, res, next) {
   res.render('wtk-admin', { title: 'WTK admin' });
 });
-
+// TODO: pritiffy
 router.post('/wtk-login', async function(req, res, next) {
   let data=req.body;
   wtkIndex.validateLogin(data)
@@ -65,10 +62,12 @@ router.post('/wtk-login', async function(req, res, next) {
     res.status(400).send(err)
   });
 });
+// TODO: make this
 router.post('/wtk-forgotPswd', function(req, res, next) {
 
 });
 
+// TODO: remove i gues
 router.get('/getMetaData', function(req, res, next) {
   wtk.getMetaData()
   .then((data) => {
@@ -83,6 +82,7 @@ router.get('/getMetaData', function(req, res, next) {
   });
 });
 
+////////////////////
 // get groups
 router.get('/groups', function(req, res, next) {
   wtk.getGroups()
@@ -127,14 +127,8 @@ router.get('/groups/:name/contents/:contName', function(req, res, next) {
   let name=req.params.name
   let contName=req.params.contName
   // validate name 
-  console.log(name)
-  console.log(contName)
-  console.log('1')
   wtk.getMetaDataByName(name+'/contents/'+contName)
   .then((data) => {
-        console.log(res.location)
-    console.log('-------------------')
-
     return res.status(200).send(data)
   })
   .catch((err) => {
@@ -147,12 +141,8 @@ router.get('/groups/:name/contents/:contName/items', function(req, res, next) {
   let name=req.params.name
   let contName=req.params.contName
   // validate name 
-  console.log('2')
   wtk.getItemsDataByName(name+'/contents/'+contName, true)
   .then((data) => {
-        console.log(res.location)
-    console.log('-------------------')
-
     return res.status(200).send(data)
   })
   .catch((err) => {
@@ -165,10 +155,8 @@ router.get('/groups/:name/contents/:contName/items/:id/content', function(req, r
   let name=req.params.name
   let contName=req.params.contName
   let id=req.params.id
-  console.log(name, id)
   // validate name 
 
-  console.log('1')
   wtk.getItem(name+'/contents/'+contName, id)
   .then((data) => {
     return res.status(200).send(data)
@@ -179,14 +167,13 @@ router.get('/groups/:name/contents/:contName/items/:id/content', function(req, r
   });
 });
 // get items metadata from content by name and id
+// TODO: delete this i gues
 router.get('/groups/:name/contents/:contName/items/:id', function(req, res, next) {
   let name=req.params.name
   let contName=req.params.contName
   let id=req.params.id
-  console.log(name, id)
   // validate name 
 
-  console.log('1')
   wtk.getItemsDataByID(name+'/contents/'+contName, id)
   .then((data) => {
     console.log('data >>>',data)
@@ -200,7 +187,8 @@ router.get('/groups/:name/contents/:contName/items/:id', function(req, res, next
 });
 
 
-
+//////////////////////////
+// content
 // get list of all contents(meta)
 router.get('/contents', function(req, res, next) {
   wtk.getContents()
@@ -216,12 +204,8 @@ router.get('/contents', function(req, res, next) {
 router.get('/contents/:name/', function(req, res, next) {
   let name=req.params.name
   // validate name 
-  console.log('1')
   wtk.getMetaDataByName(name)
   .then((data) => {
-        console.log(res.location)
-    console.log('-------------------')
-
     return res.status(200).send(data)
   })
   .catch((err) => {
@@ -232,17 +216,12 @@ router.get('/contents/:name/', function(req, res, next) {
 // get list of items from content by name
 router.get('/contents/:name/items', function(req, res, next) {
   let name=req.params.name
-  // validate name 
-  console.log('2')
   wtk.getItemsDataByName(name, true)
   .then((data) => {
-        console.log(res.location)
-    console.log('-------------------')
-
+    if (data == 204) { return res.status(204).send() }
     return res.status(200).send(data)
   })
   .catch((err) => {
-    if (err==null) { return res.status(204).send() }
     return res.status(400).send(err)
   });
 });
@@ -251,10 +230,7 @@ router.get('/contents/:name/items', function(req, res, next) {
 router.get('/contents/:name/items/:id/content', function(req, res, next) {
   let name=req.params.name
   let id=req.params.id
-  console.log(name, id)
   // validate name 
-
-  console.log('1')
   wtk.getItem(name, id)
   .then((data) => {
     return res.status(200).send(data)
@@ -268,10 +244,7 @@ router.get('/contents/:name/items/:id/content', function(req, res, next) {
 router.get('/contents/:name/items/:id', function(req, res, next) {
   let name=req.params.name
   let id=req.params.id
-  console.log(name, id)
   // validate name 
-
-  console.log('1')
   wtk.getMetaDataByID(name, id)
   .then((data) => {
     return res.status(200).send(data)
@@ -304,60 +277,4 @@ router.get('/search', function(req, res, next) {
   });
 });
 
-
-/*
-  router.post('/getAlocDataByGroup', function(req, res, next) {
-    var wtkName=req.body.wtkName;
-    async.series({
-      getAlocGroupData: function(callback){
-        wtk.getAlocDataByGroup(callback, wtkName);
-      }
-    },
-    function(err, results) {
-      if (err) { return res.send(400, err) };
-      return res.send(200, results.getAlocGroupData);
-    });
-  });
-  router.post('/getAlocDataByName', function(req, res, next) {
-    var wtkName=req.body.wtkName;
-    async.series({
-      getAlocData: function(callback){
-        wtk.getAlocDataByName(callback, wtkName);
-      }
-    },
-    function(err, results) {
-      if (err) { return res.send(400, err) };
-      return res.send(200, results.getAlocData);
-    });
-  });
-  router.post('/getDataByName', function(req, res, next) {
-    var wtkName=req.body.wtkName;
-    async.series({
-      getAlocData: function(callback){
-        wtk.getAlocData(callback);
-      }
-    },
-    function(err, results) {
-      if (err) { return res.send(400, err) };
-      var alocData=_.findWhere(results.getAlocData.alocData, {wtkName:wtkName});
-      if (alocData==undefined) { return res.send(200, undefined); };  
-      async.parallel({
-        getDataByDir: function(callback){
-          wtk.getContDataByDir(callback, alocData.wtkDir);
-        },
-        getHtmlByDir: function(callback){
-          wtk.getContHtmlByDir(callback, alocData.wtkDir);
-        }
-      },
-      function(err, results) {
-        if (err) { return res.send(400, err) };
-        var data={
-          data:results.getDataByDir,
-          html:results.getHtmlByDir
-        }
-        return res.send(200, data);
-      });
-    });
-  });
-*/
 module.exports = router;

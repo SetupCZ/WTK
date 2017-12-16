@@ -199,9 +199,10 @@ class wtkNewTextItem extends HTMLElement {
     if (!this.editContent) {
       // TODO: get cj items data in content-meta 
       const cj = this.wtkContent.getCJ()
-      let cjPosition =
-        cj._embedded.items[cj._embedded.items.length - 1]
-      cjPosition = cjPosition ? cjPosition.wtkPosition + 1 : 0
+      const itemsKeys = Object.keys(cj._embedded.items)
+      const lastItem = itemsKeys[itemsKeys.length - 1]
+      let cjPosition = cj._embedded.items[lastItem]
+          cjPosition = cjPosition ? cjPosition.wtkPosition + 1 : 0
       
       body.wtkPosition = cjPosition
     }
@@ -214,6 +215,8 @@ class wtkNewTextItem extends HTMLElement {
     }).catch(_ => {})
     if (!response.ok) return this.wtkClass.toast(response.statusText)
     const { location } = await response.json()
+
+    this.wtkClass.toast("Saved")
 
     if (this.editContent) {
       this.wtkClass.updateContentTextItem(
@@ -297,7 +300,7 @@ class wtkNewImgItem extends HTMLElement {
     if (!this.editContent) return
 
     this.metaData = this.wtkItemContent.getMetaData()
-    console.log(this.wtkItemContent)
+    console.log(this.metaData)
     // TODO: look into this
     let metaWtkWidth
     let metaWtkHeight
@@ -309,19 +312,13 @@ class wtkNewImgItem extends HTMLElement {
     // })
     const wtkWidthElem = 
       this.wtkItemContent.querySelector('form input[name="wtkWidth"]')
-      .value = this.metaData.data.find((data) => {
-        return data.name == "wtkWidth"
-      }).value
+      .value = this.metaData.wtkWidth
     const wtkHeightElem = 
       this.wtkItemContent.querySelector('form input[name="wtkHeight"]')
-      .value = this.metaData.data.find((data) => {
-        return data.name == "wtkHeight"
-      }).value
+      .value = this.metaData.wtkHeight
     const imgNameElem = 
       this.wtkItemContent.querySelector('#imgName')
-      .innerHTML = this.metaData.data.find((data) => {
-        return data.name == "wtkCont"
-      }).value
+      .innerHTML = this.metaData.wtkCont
     const imgFileElem = 
       this.wtkItemContent.querySelector('.imgUploader')
       .src = this.wtkItemContent.querySelector('wtk-imgfile img').src
@@ -346,17 +343,17 @@ class wtkNewImgItem extends HTMLElement {
   }
   async _saveClick(evt){
     evt.preventDefault()
-
+    const target = evt.target
     // body
     const validatedBody = {}
     let validForm = true;
     const validateClass = new validateInput()
-    for (const val of this.alocNewContForm.elements) {
-      if (target.elements[i].type != 'submit' &&
-        target.elements[i].type != 'file' &&
-        target.elements[i].type != 'button') {
-        validForm = validateClass._validateInput(target.elements[i]);
-        validatedBody[target.elements[i].name] = target.elements[i].value;
+    for (const val of target.elements) {
+      if (val.type != 'submit' &&
+        val.type != 'file' &&
+        val.type != 'button') {
+        validForm = validateClass._validateInput(val);
+        validatedBody[val.name] = val.value;
       }
     }
     if (!validForm) { return this.wtkClass.toast("invalid form") }
@@ -366,11 +363,11 @@ class wtkNewImgItem extends HTMLElement {
     const imgHeight = validatedBody.wtkHeight=="" ? 
       "auto" : validatedBody.wtkHeight 
 
-    const body = [
-      { name: 'wtkType', value: 'img' },
-      { name: 'wtkWidth', value: imgWidth },
-      { name: 'wtkHeight', value: imgHeight }
-    ]
+    const body = {
+      wtkType: 'img',
+      wtkWidth: imgWidth,
+      wtkHeight: imgHeight
+    }
 
     // cj
     // TODO:
@@ -380,16 +377,12 @@ class wtkNewImgItem extends HTMLElement {
     if (!this.editContent) {
       // TODO: get cj items data in content-meta 
       const cj = this.wtkContent.getCJ()
-      let cjPosition =
-        cj.collection.items[cj.collection.items.length - 1]
-          .data.find((val, key) => {
-            return val.name === "wtkPosition"
-          })
-      cjPosition = cjPosition ? cjPosition.value + 1 : 0
+      const itemsKeys = Object.keys(cj._embedded.items)
+      const lastItem = itemsKeys[itemsKeys.length - 1]
+      let cjPosition = cj._embedded.items[lastItem]
+          cjPosition = cjPosition ? cjPosition.wtkPosition + 1 : 0
 
-      body.push({
-        name: "wtkPosition", value: cjPosition
-      })
+      body.wtkPosition = cjPosition
     }
 
     // img
@@ -427,9 +420,7 @@ class wtkNewImgItem extends HTMLElement {
       if (!response.ok) return this.wtkClass.toast(response.statusText)
       const { imgItemUrl } = await response.json()
 
-      body.push(
-        { name: 'wtkCont', value: imgInfo.name }
-      )
+      body.wtkCont = imgInfo.name
     }
     // save img metadata
     const response = await fetch(path, {
@@ -611,49 +602,44 @@ class wtkItemCtrl extends HTMLElement {
     const cj = this.wtkContent.getCJ()
       
     let prevItem=item
-    const prevItemCJ = cj.collection.items.find((val) => {
-      let prevItemVisible=val.data.find((valItem) => {
-        return valItem.name=="wtkVisible"
-      })
-      if (prevItemVisible.value && val.href!=this.wtkItemHref) { 
-        prevItem=val 
+
+    const items = cj._embedded.items
+    Object.keys(items)
+    .sort((valA, valB) => {
+      return items[valA].wtkPosition < items[valB].wtkPosition
+    })
+    .find((val, key, list) => {
+      if (items[val].wtkVisible && 
+        items[val]._links.self.href != this.wtkItemHref) { 
+        prevItem = items[val] 
       }
-      return val.href==this.wtkItemHref
+      return items[val]._links.self.href == this.wtkItemHref
     })
     console.log(prevItem)
     console.log(item)
     console.log(prevItem.href==item.href)
 
-    if (prevItem.href==item.href) { return }
-    let prevItemPosition=prevItem.data.find((val) => {
-      return val.name=="wtkPosition"
-    })
-    let itemPosition=item.data.find((val) => {
-      return val.name=="wtkPosition"
-    })
-    let itemType=item.data.find((data) => {
-      return data.name=="wtkType"
-    })
-    prevItemPosition=prevItemPosition.value
-    itemPosition=itemPosition.value
-    itemType=itemType.value
+    if (prevItem._links.self.href == item._links.self.href) { return }
+    let prevItemPosition=prevItem.wtkPosition
+    let itemPosition=item.wtkPosition
+    let itemType=item.wtkType
     
     console.log('prevItemPosition',prevItemPosition)
     console.log('itemPosition',itemPosition)
     
-    const prevItemBody = [{
-      name:"wtkPosition", value:prevItemPosition
-    }]
-    const itemBody=[{
-      name:"wtkPosition", value:itemPosition
-    }]
+    const prevItemBody = {
+      wtkPosition:prevItemPosition
+    }
+    const itemBody={
+      wtkPosition:itemPosition
+    }
     // return
     const itemPath = this.groupName==null ? 
-      `${this.wtkClass.api}/contents/${item.href}` : 
-      `${this.wtkClass.api}/groups/${item.href}`  
+      `${this.wtkClass.api}/contents/${item._links.self.href}` : 
+      `${this.wtkClass.api}/groups/${item._links.self.href}`  
     const prevItemPath = this.groupName == null ?
-      `${this.wtkClass.api}/contents/${prevItem.href}` :
-      `${this.wtkClass.api}/groups/${prevItem.href}`  
+      `${this.wtkClass.api}/contents/${prevItem._links.self.href}` :
+      `${this.wtkClass.api}/groups/${prevItem._links.self.href}`  
       
     const moveUpHeaders = new Headers();
           moveUpHeaders.append('Content-Type', 'application/json');
@@ -676,7 +662,7 @@ class wtkItemCtrl extends HTMLElement {
       headers: moveUpHeaders
     }).catch(_ => { })
     if (!prevItemResponse.ok) return this.wtkClass.toast(prevItemResponse.statusText)
-    let { location } = await prevItemResponse.json()
+    let { prevItemLocation } = await prevItemResponse.json()
 
     this.wtkContent.updateCJ(
       this.groupName == null ? 'contents' : 'groups',
@@ -686,48 +672,51 @@ class wtkItemCtrl extends HTMLElement {
       location,
       this.wtkContent,
       this.wtkItemELem.previousSibling,
-      itemType)
+      itemType,
+      { wtkWidth: item.wtkWidth, wtkHeight: item.wtkHeight },
+      item
+    )
     this.parentNode.remove()
   }
   async _itemDownClick(evt){
     evt.preventDefault()
-
+    console.log(`${this.wtkItemHref}`);
     const item = this.wtkContent.getItemByID(this.wtkItemHref)
     const cj = this.wtkContent.getCJ()
-
+    
     let nextItem = item
-    const nextItemCJ = cj.collection.items.find((val, key, list) => {
-      nextItem = list[key+1]
-      return val.href==this.wtkItemHref
-    })
-    if (nextItem==undefined) { return }
-    let nextItemPosition=nextItem.data.find((val) => {
-      return val.name=="wtkPosition"
-    })
-    let itemPosition=item.data.find((val) => {
-      return val.name=="wtkPosition"
-    })
-    let itemType=item.data.find((val) => {
-      return val.name=="wtkType"
-    })
-    nextItemPosition=nextItemPosition.value
-    itemPosition=itemPosition.value
-    itemType=itemType.value
 
-    const nextItemBody = [{
-      name:"wtkPosition", value:nextItemPosition
-    }]
-    const itemBody = [{
-      name:"wtkPosition", value:itemPosition
-    }]
+    const items = cj._embedded.items
+    Object.keys(items)
+    .sort((valA, valB) => {
+      return items[valA].wtkPosition < items[valB].wtkPosition
+    })
+    .find((val, key, list) => {
+      nextItem = items[list[key+1]]
+      if (items[val]._links.self.href == this.wtkItemHref) 
+        return items[val]
+    })
+    // console.log(`${nextItem.wtkID}`);
+    if (nextItem==undefined) { return }
+
+    let nextItemPosition=nextItem.wtkPosition
+    let itemPosition=item.wtkPosition
+    let itemType=item.wtkType
+
+    const nextItemBody = {
+      "wtkPosition":nextItemPosition
+    }
+    const itemBody = {
+      "wtkPosition": itemPosition
+    }
     console.log(this.wtkItemELem.nextSibling)
     // return
     const itemPath = this.groupName==null ? 
-      `${this.wtkClass.api}/contents/${item.href}` :
-      `${this.wtkClass.api}/groups/${item.href}`
+      `${this.wtkClass.api}/contents/${item._links.self.href}` :
+      `${this.wtkClass.api}/groups/${item._links.self.href}`
     const nextItemPath = this.groupName == null ?
-      `${this.wtkClass.api}/contents/${nextItemPath.href}` :
-      `${this.wtkClass.api}/groups/${nextItemPath.href}`
+      `${this.wtkClass.api}/contents/${nextItem._links.self.href}` :
+      `${this.wtkClass.api}/groups/${nextItem._links.self.href}`
 
     const moveDownHeaders = new Headers();
           moveDownHeaders.append('Content-Type', 'application/json');
@@ -747,7 +736,7 @@ class wtkItemCtrl extends HTMLElement {
       headers: moveDownHeaders
     }).catch(_ => { })
     if (!nextItemResponse.ok) return this.wtkClass.toast(nextItemResponse.statusText)
-    let { location } = await nextItemResponse.json()
+    let { nextItemLocation } = await nextItemResponse.json()
 
     this.wtkContent.updateCJ(
       this.groupName == null ? 'contents' : 'groups',
@@ -757,7 +746,10 @@ class wtkItemCtrl extends HTMLElement {
       location, 
       this.wtkContent, 
       this.wtkItemELem.nextSibling.nextSibling, 
-      itemType)
+      itemType,
+      {wtkWidth:item.wtkWidth,wtkHeight:item.wtkHeight},
+      item 
+    )
     this.parentNode.remove()
   }
   async _itemTrashClick(evt){

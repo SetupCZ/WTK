@@ -213,6 +213,8 @@ class wtk {
       console.log(imgSize)
       console.log(metaData)
       console.log(wtkContItem)
+      wtkContItem.setMetaData(metaData)
+      wtkContItem.setSize(imgSize)
       wtkContItem.addEventListener('connectCE', (evt) => {
         console.log(evt)
         console.log('---------------------------------')
@@ -221,18 +223,18 @@ class wtk {
         
       })
     }
-      wtkContItem.setAttribute('wtk-item-href', path)
-        // wtkContItem.setAttribute('wtk-content-name', name)
-        // console.log(wtkContItem)
-        // console.log(target)
-        // console.log(inserWhere)
-        // console.log('------------------->',wtkContItem)
-      if (inserWhere==null) {
-        target.appendChild(wtkContItem)
-      }
-      if (inserWhere!=null) {
-        target.insertBefore( wtkContItem, inserWhere )
-      }
+    wtkContItem.setAttribute('wtk-item-href', path)
+      // wtkContItem.setAttribute('wtk-content-name', name)
+      // console.log(wtkContItem)
+      // console.log(target)
+      // console.log(inserWhere)
+      // console.log('------------------->',wtkContItem)
+    if (inserWhere==null) {
+      target.appendChild(wtkContItem)
+    }
+    if (inserWhere!=null) {
+      target.insertBefore( wtkContItem, inserWhere )
+    }
 
     // target.appendChild(wtkContItem)
   }
@@ -451,37 +453,39 @@ class wtkContentElem extends HTMLElement{
     this.cj=cj
   }
   async updateCJ(groupPath, name){
-    const path = `/wtk/${groupPath}/${this.wtkName}/items`
+    const path = `/wtk/${groupPath}/${this.wtkName}`
     const response = await fetch(path).catch(_ => { })
     if (!response.ok) return
     this.setCJ(await response.json())
   }
   getItemByID(id){
-    return this.cj.collection.items.find((val) => {
-      return val.href==id
-    })
+    return this.cj._embedded.items[id]
   }
   _appendWtkContentItemsData(cj, name){
-    cj._embedded.items.forEach((val, key) => {
-      // TODO: revisit 
-      let wtkWidth=val.wtkWidth
+    const items = cj._embedded.items
+    const sorted = Object.keys(items)
+      .sort((valA, valB) => {
+        return items[valA].wtkPosition < items[valB].wtkPosition
+      })
     
-      let wtkHeight=val.wtkHeight
-  
+    for (const key of sorted) {
+      let wtkWidth=items[key].wtkWidth
+      let wtkHeight=items[key].wtkHeight
       let imgSize
       if (wtkWidth!=undefined && wtkHeight!=undefined) {
         imgSize = {wtkWidth:wtkWidth, wtkHeight:wtkHeight}
       }
-      let wtkType=val.wtkType
-      
-      // console.log(wtkType)
-      this.wtkClass.addContentItem(val._links.self.href, this.target, null, wtkType, imgSize, val)
-      // let wtkContItem=document.createElement('wtk-content-item')
-      //     wtkContItem.setAttribute('wtk-item-href', val.href)
-      //     wtkContItem.setAttribute('wtk-content-name', name)
-      //     console.log(wtkContItem)
-      // this.target.appendChild(wtkContItem)
-    })
+      let wtkType=items[key].wtkType
+
+      this.wtkClass.addContentItem(
+        items[key]._links.self.href, 
+        this.target, 
+        null, 
+        wtkType, 
+        imgSize, 
+        items[key]
+      )
+    }
     if (this.wtkClass.user) {
       this.wtkClass._fetchWtkDep(
         `${this.wtkClass.base}/js/wtk-content-controls.js`,
@@ -500,8 +504,8 @@ class wtkContentElem extends HTMLElement{
     }
     // get content data
     const path = this.wtkGroupName==null ? 
-        `/wtk/contents/${this.wtkName}/items` : 
-        `/wtk/groups/${this.wtkName}/items`
+        `/wtk/contents/${this.wtkName}` : 
+        `/wtk/groups/${this.wtkName}`
     const response = await fetch(path).catch(_ => {})
     if (!response.ok) return
 
@@ -516,13 +520,14 @@ class wtkContentElem extends HTMLElement{
     if (response.status == 204) return //TODO: set function to show empty 
     
     const cj = await response.json()
-    this._appendWtkContentItemsData(cj, this.wtkName);
     this.setCJ(cj)
+    this._appendWtkContentItemsData(cj, this.wtkName);
   }
 }
 customElements.forcePolyfill = true;
 customElements.define('wtk-content', wtkContentElem);
 
+// TODO:
 // CONTENT META
 class wtkContentMetaElem extends  HTMLElement{
   constructor(args){
@@ -551,20 +556,25 @@ class wtkContentMetaElem extends  HTMLElement{
   setCJ(cj){
     this.cj=cj
   }
-  updateCJ(name){
-    let path=this.wtkGroupName==null ? `/wtk/contents/${name}/items` : `/wtk/groups/${name}/items`
-    fetch(`/wtk/${path}/${this.wtkName}`)
-    .then((data) => {
-      // console.log(data)
-      return data.json()
-    })
-    .then((cj) => {
-      this.setCJ(cj)
-      // console.log(cj)
-    })
-    .catch((err) => {
-      console.log(err)
-    });
+  async updateCJ(name){
+    const path = `/wtk/${groupPath}/${this.wtkName}/items`
+    const response = await fetch(path).catch(_ => { })
+    if (!response.ok) return
+    this.setCJ(await response.json())
+
+    // let path=this.wtkGroupName==null ? `/wtk/contents/${name}/items` : `/wtk/groups/${name}/items`
+    // fetch(`/wtk/${path}/${this.wtkName}`)
+    // .then((data) => {
+    //   // console.log(data)
+    //   return data.json()
+    // })
+    // .then((cj) => {
+    //   this.setCJ(cj)
+    //   // console.log(cj)
+    // })
+    // .catch((err) => {
+    //   console.log(err)
+    // });
   }
   getItemByID(id){
     return this.cj.collection.items.find((val) => {
@@ -722,12 +732,13 @@ class wtkGroupElem extends HTMLElement{
     // if (cj.collection.items.length==0) {
     // }
     console.log(cj);
-    cj["_embedded"].items.forEach((val, key) => {
+    const items = cj._embedded.items
+    for (const key in items) {
       let wtkContElem=document.createElement('wtk-content')
-          wtkContElem.setAttribute('wtk-name', val.href)
+          wtkContElem.setAttribute('wtk-name', items[key].href)
           wtkContElem.setAttribute('wtk-ingroup', this.wtkName)
       this.target.appendChild(wtkContElem)
-    })
+    }
     if (this.wtkClass.user) {
 
       let wtkContElem=document.createElement('wtk-content')
@@ -792,9 +803,10 @@ class wtkGroupMetaElem extends HTMLElement{
     // if (cj.collection.items.length==0) {
     // }
     console.log(this.wtkMetaTemplate) 
-    cj._embedded.items.forEach((val, key) => {
+    const items = cj._embedded.items
+    for (const key in items) {
       let wtkContElem=this.wtkMetaTemplate.querySelector('wtk-content-meta') || this.wtkMetaTemplate.querySelector('wtk-content')
-          wtkContElem.setAttribute('wtk-name', val.href)
+          wtkContElem.setAttribute('wtk-name', items[key].href)
           wtkContElem.setAttribute('wtk-ingroup', this.wtkName)
           // wtkContElem.innerHTML=this.wtkMetaTemplate
       console.log(this.wtkMetaTemplate)
@@ -802,7 +814,7 @@ class wtkGroupMetaElem extends HTMLElement{
       this.target.innerHTML+=this.wtkMetaTemplate.innerHTML
       // return
       // this.target.appendChild(wtkContElem)
-    })
+    }
 
     if (this.wtkClass.user) {
       let wtkContElem=document.createElement('wtk-content')
@@ -916,7 +928,6 @@ class wtkContentImgItemElem extends HTMLElement {
     let wtkItemCtrlElem = document.createElement('wtk-item-ctrl')
     this.appendChild(wtkItemCtrlElem)
   }
-  // methods
 }
 customElements.define('wtk-content-imgitem', wtkContentImgItemElem);
 

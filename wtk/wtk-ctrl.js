@@ -1,12 +1,13 @@
 'use strict';
-var wtkIndex = require('../wtk/wtk-index.js');
-var settings = require('./serverSettings.json');
-// var userSettings = require('./userSettings.json');
+const wtkIndex = require('../wtk/wtk-index.js');
+const settings = require('./serverSettings.json');
+// const userSettings = require('./userSettings.json');
 
-var CryptoJS = require("crypto-js")
-var jwt=require('jsonwebtoken');
+const CryptoJS = require("crypto-js")
+const jwt=require('jsonwebtoken');
 
 module.exports={
+  // TODO: pswds
   newPswd:function(formData){
     return new Promise((resolve, reject) => {
       wtkIndex.validateUser(formData)
@@ -211,19 +212,19 @@ module.exports={
   getMetaData:function() {
     return new Promise((resolve, reject) => {
       wtkIndex.getAlocData()
-      .then((data) => {
-        // for each data.alocData promise
+      .then((alocData) => {
+        // for each alocData.alocData promise
         // get metaData from group content
         return Promise.all(data.map((val) => {
           return wtkIndex.getMetaDataByDir(val.wtkDir)
         }))
       })
       // response from promise.all
-      .then((data) => {
-        console.log('allData')
-        console.log(data)
+      .then((metaData) => {
+        console.log('allmetaData')
+        console.log(metaData)
         // vratime rest api
-        resolve(data)
+        resolve(metaData)
       })
       .catch((err) => {
         console.log(err)
@@ -310,7 +311,7 @@ module.exports={
             "items": { "href": `${wtkDir}/contents` }
           },
           {
-            "items":[]
+            "items":{}
           }
         )
 
@@ -319,7 +320,7 @@ module.exports={
           {},
           {},
           {
-            "items":[]
+            "items":{}
           }
         )
         console.log(halMetaData);
@@ -331,7 +332,7 @@ module.exports={
         return Promise.all([metaDataPromise, itemsDataPromise])
       })
       .then(([metaData, itemsData]) => {
-        resolve(metaData)
+        resolve({ location: metaData._links.self.href })
       })
       .catch((err) => {
         console.log(err)
@@ -359,8 +360,8 @@ module.exports={
         metaData.groupAttributes = formData.groupAttrs
         return wtkIndex.addMetaData(metaData, metaData._links.self.href)
       })
-      .then((cj) => {
-        return resolve(cj)
+      .then((metaData) => {
+        return resolve({location: metaData._links.self.href})
       })
       .catch((err) => {
         return reject(err)
@@ -515,7 +516,6 @@ module.exports={
     // edit aloc data
     // add new metaData
     // return cj
-    console.log('formData',formData)
     // return
     return new Promise((resolve, reject) => {
       let staleAlocData={};
@@ -571,7 +571,7 @@ module.exports={
             "items": { "href": `${selfDir}/items` }
           },
           {
-            "items": []
+            "items": {}
           }
         )
 
@@ -580,7 +580,7 @@ module.exports={
           {},
           {},
           {
-            "items": []
+            "items": {}
           }
         )
         console.log(halMetaData);
@@ -623,7 +623,7 @@ module.exports={
 
         return wtkIndex.addMetaData(metaData, selfDir)
       })
-      .then((cj) => {
+      .then((metaData) => {
         return resolve({ location: metaData._links.self.href})
       })
       .catch((err) => {
@@ -655,30 +655,24 @@ module.exports={
   },
   getItem:function (wtkName, wtkID){
     return new Promise((resolve, reject) => {
-
       let wtkSelfDir
-      let itemType
-      let wtkDir
+      let selfDir
+      let itemHref
       wtkIndex.getAlocDataByName(wtkName)
       .then((alocData) => {
-        wtkDir=alocData.wtkDir
-        return wtkIndex.getItemsDataByDir(alocData.wtkDir)
+        selfDir = alocData.wtkDir
+        return wtkIndex.getMetaDataByDir(selfDir)
       })
       .then((itemsData) => {
-        let selfDir=`${wtkName}/items/${wtkID}`
-        let item=wtkIndex.getItemsDataByID(selfDir, itemsData)
-        itemType=item.data.find((data) => {
-          return data.name=="wtkType"
-        })
-
-        if (itemType.value=="text") {
-          return wtkIndex.getTextItemByID(wtkDir, wtkID)
+        itemHref = `${wtkName}/items/${wtkID}`
+        console.log(`${JSON.stringify(itemsData._embedded)}`);
+        let item = itemsData._embedded.items[itemHref]
+        
+        if (item.wtkType=="text") {
+          return wtkIndex.getTextItemByID(selfDir, wtkID)
         }
-        if (itemType.value=="img") {
-          let wtkImgName=item.data.find((data) => {
-            return data.name=="wtkCont"
-          })
-          return wtkIndex.getImgItemByName(wtkImgName.value)
+        if (item.wtkType=="img") {
+          return wtkIndex.getImgItemByName(item.wtkCont)
         }
       })
       .then((contData) => {
@@ -687,7 +681,6 @@ module.exports={
       .catch((err) => {
         console.log(err)
         reject(err)
-        //...
       });
     });
   },
@@ -701,7 +694,6 @@ module.exports={
       let itemHref
       let selfDir
       let itemMetaData
-      console.log('wtkImgCont',wtkImgCont)
       wtkIndex.validateI(formData, wtkImgCont)
       .then((vItem) => {
         vData = vItem
@@ -709,7 +701,7 @@ module.exports={
       })
       .then((alocData) => {
         selfDir = alocData.wtkDir
-        return wtkIndex.getItemsDataByDir(selfDir)
+        return wtkIndex.getMetaDataByDir(selfDir)
       })
       .then((itemsData) => {
         console.log(itemsData)
@@ -731,17 +723,18 @@ module.exports={
           itemHref,
           {
             ...itemMetaData
+          },
+          {
+            content:{href:`${itemHref}/contents`}
           }
         )
-        itemsData._embedded.items.push(halItemsData)
 
-
-
-        // return
-
+        ///////////////////////////////
+        // add item to content metaData
+        itemsData._embedded.items[itemHref]=halItemsData
 
         const editItemPromiseChain = [
-          wtkIndex.addItemsData(itemsData, selfDir)
+          wtkIndex.addMetaData(itemsData, selfDir)
         ]
         if (vData.wtkType=="text") {
           editItemPromiseChain.push(wtkIndex.addTextItem(itemMetaData, selfDir))
@@ -766,95 +759,44 @@ module.exports={
       // get metaData
       // editMetadata
       // save metaData
-      let validatedFormData
+      let vData
       let itemHref
       let selfDir
-      let pathToItemsJson
-      let itemsDataObj
       wtkIndex.validateI(data, wtkImgCont)
-      .then((data) => {
-        validatedFormData=data
+      .then((vItem) => {
+        vData = vItem
         return wtkIndex.getAlocDataByName(wtkName)
       })
       .then((alocData) => {
-        selfDir=alocData.wtkDir
-        // console.log(alocData)
-        return wtkIndex.getItemsDataByDir(alocData.wtkDir)
+        selfDir = alocData.wtkDir
+        return wtkIndex.getMetaDataByDir(selfDir)
       })
       .then((itemsData) => {
         console.log('itemsData',itemsData)
-        itemHref=`${wtkName}/items/${wtkID}`
-        pathToItemsJson=`${selfDir}`
+        itemHref = `${wtkName}/items/${wtkID}`
 
-        itemsDataObj={
-          wtkID:wtkID,
-          wtkType:"",
-          wtkCont:"",
-          wtkPosition:"",
-          wtkVisible:"",
-          wtkName:"",
-          wtkWidth:"",
-          wtkHeight:"",
-          wtkInsertDate:"",
-          wtkEditDate:new Date(),
-        }
-
-        let editTinyMCE=false
-
-        // console.log('editTinyMCE',editTinyMCE)
-        let itemsDataItem=wtkIndex.getItemsDataByID(itemHref, itemsData)
-        let itemType=itemsDataItem.data.find((data) => {
-          return data.name=="wtkType"
-        })
+        let editItem = itemsData._embedded.items[itemHref] 
         
-        console.log(itemsDataItem)
-        console.log(itemsDataObj)
-        itemsDataItem.data.forEach((val, key) => {
-          itemsDataObj[val.name]=val.value
-        })
-        validatedFormData.forEach((val, key) => {
-          if (val.name=="wtkType" && val.value=="text") { editTinyMCE=true }
-          itemsDataObj[val.name]=val.value
-        })
-
-        console.log('validatedFormData',validatedFormData)
-        console.log('itemsDataObj',itemsDataObj)
-        if (!editTinyMCE && itemType.value=="text") {
-          let itemsDataItem = itemsData.collection.items.find((valI) => {
-            return valI.href==itemHref
-          })
-          // console.log('itemsDataItem',itemsDataItem)
-          let wtkContFromItemsData = itemsDataItem.data.find((val) => {
-            return val.name=="wtkCont"
-          })
-          itemsDataObj.wtkCont=wtkContFromItemsData.value
+        for (const key in vData) {
+          editItem[key] = vData[key]
         }
+        editItem.wtkEditDate = new Date()
 
-        console.log(itemsDataObj)
-        let editedMetaItem=wtkIndex.editItem(itemsData, itemHref, validatedFormData)
+        console.log(itemsData)
+        console.log(itemsData._embedded.items[itemHref].wtkCont)
 
-        let editedItemsData=wtkIndex.addItemsData(editedMetaItem, pathToItemsJson)
-
-        let wtkCont
-        if (itemType.value=="img") {
-          wtkCont = new Promise((resolve, reject) => {
-            resolve('null')
-          });
-          // wtkCont=wtkIndex.addImgItem(wtkImgCont, selfDir.href, itemsDataObj.wtkID)
+        const editItemPromiseChain = [
+          wtkIndex.addMetaData(itemsData, selfDir)
+        ]
+        if (editItem.wtkType=="text") {
+          editItemPromiseChain.push(
+            wtkIndex.addTextItem(editItem, selfDir)
+          )
         }
-        else{
-          wtkCont=wtkIndex.addTextItem(itemsDataObj, pathToItemsJson)
-        }
-
-        return Promise.all([editedItemsData, wtkCont])
-        // return wtkIndex.addItemsData(editedItemsData, editedItemsData.collection.href)
+        return Promise.all(editItemPromiseChain)
       })
-      .then((editedItemsData) => {
-        console.log('here')
-        console.log(editedItemsData)
-        let cj=wtkIndex.getVisibleItems(editedItemsData[0])
-        console.log(itemHref)
-        resolve(itemHref)
+      .then(([editedItemsData, textContent]) => {
+        resolve({ location: itemHref })
       })
       .catch((err) => {
         console.log(err)
@@ -866,30 +808,23 @@ module.exports={
     return new Promise((resolve, reject) => {
       let itemHref
       let selfDir
-      let pathToItemsJson
       wtkIndex.getAlocDataByName(wtkName)
       .then((alocData) => {
-        // return wtkIndex.getTextItemByID(alocData.wtkDir, wtkID)
-        selfDir=alocData.wtkDir
-        console.log(alocData)
-        return wtkIndex.getItemsDataByDir(alocData.wtkDir)
+        selfDir = alocData.wtkDir
+        return wtkIndex.getMetaDataByDir(selfDir)
       })
       .then((itemsData) => {
-        itemHref=`${wtkName}/items/${wtkID}`
-        pathToItemsJson=`${selfDir}`
+        itemHref = `${wtkName}/items/${wtkID}`
 
-        let editedItemsData=wtkIndex.editItem(itemsData, itemHref, [{name:"wtkVisible", value:false}])
-        console.log('editedMetaData',editedItemsData)
-        return wtkIndex.addItemsData(editedItemsData, pathToItemsJson)
+        itemsData._embedded.items[itemHref].wtkVisible = false
+        return wtkIndex.addMetaData(itemsData, selfDir)
       })
       .then((editedItemsData) => {
-        let cj=wtkIndex.getVisibleItems(editedItemsData)
-        resolve(cj)
+        resolve()
       })
       .catch((err) => {
         console.log(err)
         reject(err)
-        //...
       });
     });
   },
@@ -898,16 +833,21 @@ module.exports={
     return new Promise((resolve, reject) => {
       wtkIndex.getAlocDataByName(name)
       .then((alocData) => {
-        return wtkIndex.getItemsDataByDir(alocData.wtkDir)
+        if (alocData == null ) return resolve(204) 
+        return wtkIndex.getMetaDataByDir(alocData.wtkDir)
       })
       .then((itemsData) => {
-        itemsData["_embedded"].items = wtkIndex.getVisibleItems(itemsData)
+        console.log(itemsData);
+        let visItems = wtkIndex.getVisibleItems(itemsData)
+        console.log(`${visItems}`);
+        itemsData._embedded.items = visItems
         // TODO: visit sort
         if (sort) {
           let sortedItemsData = wtkIndex.sortItemsData(itemsData)
           console.log(sortedItemsData);
           // visibleItemsData.collection.items=sortedItemsData
         }
+        console.log(`itemsData: ${JSON.stringify(itemsData)}`);
         return resolve(itemsData)
       })
       .catch((err) => {
@@ -918,10 +858,8 @@ module.exports={
   },
   getMetaDataByName:function (name) {
     return new Promise((resolve, reject) => {
-      console.log('hns');
       wtkIndex.getAlocDataByName(name)
       .then((alocData) => {
-        
         return wtkIndex.getMetaDataByDir(alocData.wtkDir)
       })
       .then((metaData) => {
@@ -964,10 +902,10 @@ module.exports={
       });
     });
   },
+  // TODO: delete this i gues
   getItemsDataByID:function (wtkName, wtkID){
     return new Promise((resolve, reject) => {
       
-      let itemHref=wtkName+"/items/"+wtkID
       console.log('getMetaDataByID')
       wtkIndex.getAlocDataByName(wtkName)
       .then((alocData) => {
@@ -976,7 +914,9 @@ module.exports={
       })
       .then((itemsData) => {
         console.log(itemsData)
-        return wtkIndex.getItemsDataByID(itemHref, itemsData)
+        let itemHref = wtkName + "/items/" + wtkID
+        itemsData._embedded.items[itemHref]
+        // return wtkIndex.getItemsDataByID(itemHref, itemsData)
       })
       .then((item) => {
         console.log('item',item)

@@ -1,16 +1,16 @@
 'use strict';
 
-let fs = require('fs');
-let path = require('path');
-let xss = require('xss');
-let sanitizeHtml = require('sanitize-html');
+const fs = require('fs');
+const path = require('path');
+const xss = require('xss');
+const sanitizeHtml = require('sanitize-html');
 let alocDataGlobal={}
-let cjBase='';
-var settings = require('./serverSettings.json');
+const cjBase='';
+const settings = require('./serverSettings.json');
 
-var nodemailer = require("nodemailer");
-var https = require("https");
-var smtpTransport = require('nodemailer-smtp-transport');
+const nodemailer = require("nodemailer");
+const https = require("https");
+const smtpTransport = require('nodemailer-smtp-transport');
 
 const filterEverything = {
   whitelist:[],
@@ -105,15 +105,17 @@ module.exports={
   getAlocData:function() {
     return new Promise((resolve, reject) => {
       console.log('inGetALocData');
-      if (alocDataGlobal.alocData != undefined) { return resolve(alocDataGlobal) }
+      // return saved alocData if we have them
+      console.log(`alocDataGlobal: ${alocDataGlobal}\n length: ${alocDataGlobal.length}`);
+      if (alocDataGlobal.alocData) 
+        return resolve(alocDataGlobal) 
+      
+      // read alocData.json if we dont have it saved
       var filePath=path.resolve(__dirname, './alocData.json')
       fs.readFile(filePath, {encoding: 'utf8'}, function(err, data) {
-        if (err) {return reject(err); }
-        console.log(data);
-        if (data==="") { return resolve(alocDataGlobal) }
+        if (err) { return reject(err); }
         else { 
-          alocDataGlobal=JSON.parse(data); 
-          console.log('ss');
+          alocDataGlobal = JSON.parse(data); 
           return resolve(alocDataGlobal) };
       });
     })
@@ -121,12 +123,12 @@ module.exports={
   getAlocDataByName:function(wtkName, newCont) {
     return new Promise((resolve, reject) => {
       // alocDataGlobal is set
-      if (alocDataGlobal.alocData != undefined) { 
-        if (alocDataGlobal.alocData.length==0) { reject(null) }
-        let alocDataByName=returnAlocDataByName(alocDataGlobal, wtkName);
+      if (alocDataGlobal.alocData) { 
+        let alocDataByName = 
+          returnAlocDataByName(alocDataGlobal, wtkName);
         if (!alocDataByName) {
           if (newCont) { return resolve(null) }
-          return reject(null) 
+          return reject(204) 
         }
         return resolve(alocDataByName)
       }
@@ -136,18 +138,19 @@ module.exports={
       fs.readFile(filePath, {encoding: 'utf8'}, function(err, data) {
         if (err) { return reject(err); }
         else{ 
-          alocDataGlobal=JSON.parse(data);
-          if (alocDataGlobal.alocData.length==0) { return resolve(null) }
-          let alocDataByName=returnAlocDataByName(alocDataGlobal, wtkName)
+          alocDataGlobal = JSON.parse(data);
+          let alocDataByName = 
+            returnAlocDataByName(alocDataGlobal, wtkName)
           if (!alocDataByName) { 
             if (newCont) { return resolve(null) }
-            return reject(null)
+            return reject(204)
           }
           return resolve(alocDataByName)
         };
       });
     });
   },
+  // TODO: getGroups getContents will use on admin page
   getGroups:function () {
     let sendGroups=[];
     alocDataGlobal.forEach((val, key) => {
@@ -189,15 +192,9 @@ module.exports={
       });
     });
   },
+  // TODO: delete this i gues
   getMetaDataByID:function(wtkPath, metaData){
     return metaData.collection.items.find((item) => {
-      return item.href==wtkPath
-    })
-  },
-  getItemsDataByID:function(wtkPath, itemsData){
-    console.log(wtkPath)
-    return itemsData.collection.items.find((item) => {
-      console.log(item.href)
       return item.href==wtkPath
     })
   },
@@ -220,127 +217,17 @@ module.exports={
     });
   },
   getVisibleItems(metaData){
-    console.log(metaData);
-    return metaData["_embedded"].items.map(val => { return val.wtkVisible } )
-    let itemMetaData=[]
-    metaData.collection.items.forEach((valI, key) => {
-      let itemVisible=valI.data.find((valD) => {
-        return valD.name=="wtkVisible"
-      })
-      if (itemVisible==undefined || itemVisible.value) {
-        itemMetaData.push(valI)
-      }
+    const items = metaData._embedded.items
+    return Object.keys(items).map(key => { 
+      if (items[key].wtkVisible) return items[key]
     })
-    metaData.collection.items=itemMetaData
-    return metaData
   },
+  // TODO: sort object
   sortItemsData(metaData){
     return metaData._embedded.items.sort((itemA, itemB) => {
       return itemA.wtkPosition - itemB.wtkPosition
     })
   },
-  dropItem(metaData, href){
-    console.log(metaData.collection.items.length)
-    let editedItems=metaData.collection.items.map((valI) => {
-      console.log(valI.href, href)
-      if (valI.href==href) {
-        valI.data = valI.data.map((valD) => {
-          if (valD.name=="wtkVisible") {
-            valD.value=false;
-          }
-          console.log(valD)
-          return valD
-        })
-      }
-      return valI
-    });
-    metaData.collection.items=editedItems
-    console.log(metaData.collection.items.length)
-    console.log(editedItems)
-    return metaData
-  },
-  editItem(metaData, href, data){
-    console.log(href)
-    let editedItems=metaData.collection.items.map((valI) => {
-      if (valI.href==href) {
-        valI.data = valI.data.map((valD) => {
-          data.forEach((valDat, keyDat) => {
-            if (valD.name==valDat.name) {
-              valD.value=valDat.value;
-            }
-          })
-          if (valD.name=="wtkEditDate") {
-            valD.value=new Date();
-          }
-          return valD
-        })
-      }
-      return valI
-    });
-    metaData.collection.items=editedItems
-    return metaData
-  },
-
-  /*
-  getAlocDataByGroup:function(callback, wtkName) {
-    var filePath=path.resolve(__dirname, './alocData.json')
-    fs.readFile(filePath, {encoding: 'utf8'}, function(err, data) {
-      if (err) { return callback(err); }
-      else{ 
-        data=JSON.parse(data);
-        var alocDataSend=[];
-        _.each(data.alocData, function(val, key, list){
-          if (val.wtkGroup==wtkName) { 
-            alocDataSend.push(val) };
-        });
-        return callback(null, alocDataSend); 
-      };
-    });
-  },
-  getContDataByDir:function(callback, dir) {
-    var filePath=path.resolve(__dirname, '../content', dir, 'wtkData.json');
-    fs.readFile(filePath, {encoding: 'utf8'}, function(err, data) {
-      if (err) { return callback(err); }
-      else{ return callback(null, JSON.parse(data)) };
-    });
-  },
-  getContHtmlByDir:function(callback, dir) {
-    var filePath=path.resolve(__dirname, '../content', dir, 'index.html');
-    fs.readFile(filePath, {encoding: 'utf8'}, function(err, data) {
-      if (err) { return callback(err); }
-      else{ return callback(null, data); };
-    });
-  },
-  getContByName:function(callback, name, dir) {
-    var filePath=path.resolve(__dirname, './alocData.json')
-    fs.readFile(filePath, {encoding: 'utf8'}, function(err, data) {
-      if (err) { return callback(err); }
-      else{ return callback(null, data.alocData); };
-    });
-  },
-  dropCont:function(callback, dir) {
-    var filePath=path.resolve(__dirname, '../content/', dir);
-    if( fs.existsSync(filePath) ) {
-      fs.readdirSync(filePath).forEach(function(file,index){
-        var curPath = filePath + "/" + file;
-        if(fs.lstatSync(curPath).isDirectory()) { // recurse
-          deleteFolderRecursive(curPath);
-        } else { // delete file
-          fs.unlinkSync(curPath);
-        }
-      });
-      fs.rmdirSync(filePath);
-      return callback(null);
-    };
-
-    // fs.mkdir(filePath, function(err, data) {
-    //   if (err) { return callback(err) }
-    //   else{ return callback(null) };
-    // });
-  },
-  */
-
-
   addTextItem:function(data, wtkDir) {
     return new Promise((resolve, reject) => {
       var filePath=path.resolve(__dirname, 'yourContent', wtkDir, data.wtkID+'.html');
@@ -350,35 +237,8 @@ module.exports={
       });
     });
   },
-  addImgItem:function(data,wtkDir, wtkID){
-    // var file = __dirname + '/' + req.file.filename;
-    //   fs.rename(req.file.path, file, function(err) {
-    //     if (err) {
-    //       console.log(err);
-    //       res.send(500);
-    //     } else {
-    //       res.json({
-    //         message: 'File uploaded successfully',
-    //         filename: req.file.filename
-    //       });
-    //     }
-    //   });
-    return new Promise((resolve, reject) => {
-      let ext=data.mimetype=="img/jpeg"? "jpg":"png"
-      var filePath=path.resolve(__dirname, 'yourContent', wtkDir, wtkID+'.'+ext);
-      console.log(filePath)
-      console.log(ext)
-      console.log('imgdata',data)
-      console.log(typeof data)
-      fs.writeFile(wtkID+'.'+ext, data,{encoding: 'binary'},  function(err, data) {
-        if (err) { return reject(err) }
-        else{ return resolve(null) };
-      });
-    });
-  },
   addNewDir:function(wtkDir) {
     return new Promise((resolve, reject) => {
-      
       var filePath=path.resolve(__dirname, './yourContent/', wtkDir);
       fs.mkdir(filePath, function(err, data) {
         if (err) { reject(err) }
@@ -386,17 +246,10 @@ module.exports={
       });
     });
   },
-  
   addMetaData:function(cj, wtkDir) {
     return new Promise((resolve, reject) => {
-      // console.log(wtkDir)
-      // console.log(__dirname)
-      // console.log(path.resolve(__dirname, 'yourContent'))
-      console.log("start reading file")
-      console.log(wtkDir)
       var filePath=path.resolve(__dirname, 'yourContent', wtkDir, 'wtkMetaData.json');
       fs.writeFile(filePath, JSON.stringify(cj), function(err, data) {
-        console.log("end reading file")
         if (err) { return reject(err) }
         else{ return resolve(cj) };
       });
@@ -404,26 +257,17 @@ module.exports={
   },
   addItemsData:function(cj, wtkDir) {
     return new Promise((resolve, reject) => {
-      // console.log(wtkDir)
-      // console.log(__dirname)
-      // console.log(path.resolve(__dirname, 'yourContent'))
-      console.log("start reading file")
-      console.log(wtkDir)
       var filePath=path.resolve(__dirname, 'yourContent', wtkDir, 'wtkItemsData.json');
       fs.writeFile(filePath, JSON.stringify(cj), function(err, data) {
-        console.log("end reading file")
         if (err) { return reject(err) }
         else{ return resolve(cj) };
       });
     });
   },
-
   editAlocData:function(alocData) {
     return new Promise((resolve, reject) => {
-      
       var filePath=path.resolve(__dirname, './alocData.json')
       fs.writeFile(filePath, JSON.stringify(alocData), function(err, data) {
-          console.log(data)
         if (err) { reject(err) }
         else{ resolve(null) };
       });
@@ -595,7 +439,7 @@ module.exports={
 
         if (!dataReg[val.name].reg.test(val.value)) { return reject(dataReg[val.name].msg) }
       }
-    console.log('all good')
+      console.log('all good')
 
 
       // test img
@@ -804,6 +648,7 @@ module.exports={
     }
     return HAL
   },
+  // TODO: remove all below
   renderGroupAttrs:function (groupAttrs) {
     const groupAttributes = []
     for (val in groupAttrs) {

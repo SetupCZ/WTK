@@ -1,0 +1,13 @@
+Remove alocData:[] from alocData
+MetaData items transform to object
+Replace data with https://github.com/adamreisnz/replace-in-file
+Search
+Img css #wtk__imgItemCtrl__upload > pos: rel
+        #wtk__imgItemWrapper .wtk-fileInput input[type="file"] > pos: abs
+        .wtkFullScreen > z-index
+Css rewamp
+Admin page
+
+alocDataByName
+if addContent or addGroup and cant find name > resolve null
+else reject 204

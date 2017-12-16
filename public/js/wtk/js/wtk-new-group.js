@@ -289,12 +289,13 @@ class wtkAlocNewGroup extends HTMLElement {
     }).catch(_ => {})
     console.log(response);
     if (!response.ok) return this.wtkClass.toast(response.statusText)
-    const data = await response.json()
-    console.log(data);
+    const { location } = await response.json() //TODO: edit the {} to sute the architecture ... same on line 339 
+
+    console.log(location);
     
     // const 
-    const updateGroupName=this.editGroup? this.wtkGroupName : this.wtkName
-    this.wtkClass.updateGroup(updateGroupName)      
+    // const updateGroupName=this.editGroup? this.wtkGroupName : this.wtkName
+    this.wtkClass.updateGroup(location)      
     this.wtkClass.toast("Group přidán.")
     this._closeAlocNewGroupClick()
   } 

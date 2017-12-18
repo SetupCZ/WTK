@@ -356,9 +356,10 @@ $whiteframe-shadow-24dp: 0px 11px 15px -7px rgba(0, 0, 0, $shadow-key-umbra-opac
 /////////////////////////////////////////////////////////
 // flex
 .#{$prefix}layout{
-  @include flex()
+  @include flex();
 }
 .#{$prefix}layout-column{
+  @include flex();
   flex-direction: column;
 }
 .#{$prefix}wrap{

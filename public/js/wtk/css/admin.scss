@@ -1,0 +1,27 @@
+@import 'brand';
+@import 'basic';
+#wtk-admin{
+  height: calc(100vh - 5px);
+  transition: all 0.5s ease-in;
+
+  &.showAdmin{
+    transform: translateY(calc(100% - 50px))
+  }
+}
+#wtk-admin-body{
+
+}
+#wtk-admin-label{
+  background-color: $colP;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+}
+#userPswdFormWrapper{
+  display: none;
+}
+.underline{
+  width: calc(100% + 8px);
+  margin-left: -4px;
+  height: 1px;
+}

@@ -6,7 +6,7 @@ x MetaData items transform to object
         #wtk__imgItemWrapper .wtk-fileInput input[type="file"] > pos: abs
         .wtkFullScreen > z-index
   Css rewamp
-  Admin page
+x Admin page
 
 x alocDataByName
     if addContent or addGroup and cant find name > resolve null
@@ -16,3 +16,4 @@ x _fetchWtkDep > fetchWtkDep
 x _getTinyMCEJS > getTinyMCEJS
   get set for cj
 x groupAttributes > to object
+  download css and html ... add wtk function

@@ -5,6 +5,13 @@ class wtk {
     this.api = "/wtk/auth"
     this.apiOpen = "/wtk"
     this.user = this._getCookie('userForWeb') || false;  // <=PREPSAT !!!!!
+    this._initAdmin()
+  }
+  _initAdmin(){
+    if (!this.user) return
+    this.fetchWtkDep(
+      `${this.base}/js/wtk-admin.js`, 
+    )
   }
   toast(msg, mainErr) {
     console.log(msg)
@@ -71,9 +78,11 @@ class wtk {
     if (path == undefined || path == null || path == "") return 
 
     const loadedScripts = document.querySelectorAll(`*[src="${path}"]`)
+
+    console.log(`${/^(https)?$/.test(path)}`);
     if (loadedScripts.length == 0) {
       const wtkScriptJS = document.createElement('script')
-            wtkScriptJS.type = "module" //TODO: babel 
+      wtkScriptJS.type = /^(https)+.+$/.test(path)? "":"module" //TODO: babel 
             wtkScriptJS.src = path;
       document.body.appendChild(wtkScriptJS);
     }
@@ -136,20 +145,16 @@ class wtk {
     }
   }
   appendWtkGroupItemsData(cj, name, target, contentType, metaTemplate) {
-    console.log(cj);
     const items = cj._embedded.items
-    console.log(name);
     Object.keys(items)
     .forEach((val, key) => {
       const wtkContElem = document.createElement(`wtk-${contentType}`)
             wtkContElem.setAttribute('wtk-name', items[val]._links.self.href)
             wtkContElem.setAttribute('wtk-ingroup', name)
       if (contentType == "content-meta") {
-        console.log(metaTemplate);
         wtkContElem.innerHTML = metaTemplate.innerHTML 
       }
       target.appendChild(wtkContElem)
-      console.log(wtkContElem);
     })
     if (this.user) {
       const wtkContElem = document.createElement(`wtk-${contentType}`)
@@ -179,7 +184,6 @@ class wtk {
     const response = await fetch(path).catch(_ => { })
     if (!response.ok) return false
 
-    console.log(response);
     if (response.status == 204 && this.user) {
       this.fetchWtkDep(
         `${this.base}/js/wtk-new-${targetType}.js`,
@@ -202,9 +206,8 @@ class wtk {
   }
   async visibleItems(content, wtkGroupName) {
     return new Promise(async (resolve, reject) => {
-      console.log(content);
-        // TODO: visit this
-        return resolve(content)
+      return resolve(content)
+      // TODO: visit this
       if (!wtkGroupName) { return resolve(content) }
       const path = `${this.apiOpen}/groups/${wtkGroupName}`
       const response = await fetch(path).catch(_ => {})
@@ -266,91 +269,39 @@ class wtk {
         })
     });
   }
-  updateContentTextItem(location, target, type, groupPath) {
-    // let path=group ? 'groups' : 'contents'
-    fetch(`/wtk/${groupPath}/${location}/content`)
-      .then((data) => {
-        return data.text()
-      })
-      .then((contData) => {
-        // console.log(contData)
-        let wtkCont = target.querySelector('wtk-tinymce')
-        wtkCont.innerHTML = contData
-      })
-      .catch((err) => {
-        this.wtkClass._toast(err)
-        console.log(err)
-      })
-  }
-  updateContentImgItem(location, target, type, groupPath) {
-    // let path=group ? 'groups' : 'contents'
-
-    fetch(`/wtk/${groupPath}/${location}`)
-      .then((data) => {
-        return data.json()
-      })
-      .then((metaData) => {
-        console.log(metaData)
-        target.setMetaData(metaData.collection.items[0])
-      })
-      .catch((err) => {
-        this.toast(err)
-      });
-    fetch(`/wtk/${groupPath}/${location}/content`)
-      .then((data) => {
-        return data.blob()
-      })
-      .then((contBlob) => {
-        let imgElm = target.querySelector('wtk-imgFile img')
-
-        let objectURL = window.URL.createObjectURL(contBlob);
-        imgElm.src = objectURL;
-        imgElm.onload = () => {
-          // window.URL.revokeObjectURL(imgElm.src);
-        }
-        // wtkCont.appendChild(imgElm)
-        // this.appendChild(wtkCont)
-
-        // let wtkItemCtrlElem=document.createElement('wtk-item-ctrl')
-        // this.appendChild(wtkItemCtrlElem)
-      })
-      .catch((err) => {
-        this.toast(err)
-        console.log(err)
-      })
-  }
   updateGroup(location) {
-    console.log(location)
-    let groupElem = document.querySelectorAll(`wtk-group[wtk-name="${location}"]`)
+    const groupElem = 
+      document.querySelectorAll(`wtk-group[wtk-name="${location}"]`)
+
     groupElem.forEach((val, key) => {
       val.innerHTML = ""
       val._getGroupData(location)
     })
 
-    let groupMetaElem = document.querySelectorAll(`wtk-group-meta[wtk-name="${location}"]`)
+    const groupMetaElem = 
+      document.querySelectorAll(`wtk-group-meta[wtk-name="${location}"]`)
+
     groupMetaElem.forEach((val, key) => {
       val.innerHTML = ""
       val._getGroupData(location)
     })
   }
   updateContent(location) {
-    let contElem = document.querySelectorAll(`wtk-content[wtk-name="${location}"]`)
-    console.log(contElem)
+    const contElem = 
+      document.querySelectorAll(`wtk-content[wtk-name="${location}"]`)
+
     contElem.forEach((val, key) => {
       val.innerHTML = ""
       val._getContentData(location)
     })
 
-    let contMetaElem = document.querySelectorAll(`wtk-content-meta[wtk-name="${location}"]`)
-    console.log(contMetaElem)
+    let contMetaElem = 
+      document.querySelectorAll(`wtk-content-meta[wtk-name="${location}"]`)
+
     contMetaElem.forEach((val, key) => {
       val.innerHTML = val.wtkMetaTemplate
       val._getContentData(location)
     })
-  }
-  editContentData(location, target) {
-    console.log(lcoation)
-
   }
   addContentItem(path, target, inserWhere, type, imgSize, metaData) {
     let wtkContItem
@@ -359,94 +310,53 @@ class wtk {
     }
     if (type == "img") {
       wtkContItem = document.createElement('wtk-content-imgItem')
-      console.log(imgSize)
-      console.log(metaData)
-      console.log(wtkContItem)
       wtkContItem.setMetaData(metaData)
       wtkContItem.setSize(imgSize)
       wtkContItem.addEventListener('connectCE', (evt) => {
-        console.log(evt)
-        console.log('---------------------------------')
         wtkContItem.setSize(imgSize)
         wtkContItem.setMetaData(metaData)
-
       })
     }
     wtkContItem.setAttribute('wtk-item-href', path)
-    // wtkContItem.setAttribute('wtk-content-name', name)
-    // console.log(wtkContItem)
-    // console.log(target)
-    // console.log(inserWhere)
-    // console.log('------------------->',wtkContItem)
+
     if (inserWhere == null) {
       target.appendChild(wtkContItem)
     }
     if (inserWhere != null) {
       target.insertBefore(wtkContItem, inserWhere)
     }
-
-    // target.appendChild(wtkContItem)
   }
-  dropContentInGroup(location) {
-    let myHeaders = new Headers();
-    myHeaders.append('Content-Type', 'application/json');
-    // return 
-    // console.log(location)
+  async dropContentInGroup(location) {
+    const groupHeaders = new Headers();
+          groupHeaders.append('Content-Type', 'application/json');
+          
     let conf = confirm("send?")
     if (!conf) { return }
-    fetch(`${this.api}/${location}`, { method: 'DELETE', headers: myHeaders })
-      .then((data) => {
-        return data.text()
-      })
-      .then((data) => {
-        // console.log(data)
-        // this._closeAlocNewGroupClick()
 
-        this.toast("meta groupy ulozeny.")
-        // this.wtkClass._fetchWtkDep(null, 'wtk-aloc-new-group', document.body)
+    const path = `${this.api}/${location}`
+    const response = await fetch(path, { 
+      method: 'DELETE', 
+      headers: groupHeaders 
+    }).catch(_ => {})
+    if (!response.ok) return this.toast(response.statusText)
 
-
-
-      })
-      .catch((err) => {
-        console.log(err)
-        this.toast(err)
-      })
+    this.toast("meta groupy ulozeny.")
   }
   async addContentToGroup(location, groupName) {
-    console.log('in addContentToGroup');
     const groupHeaders = new Headers();
           groupHeaders.append('Content-Type', 'application/json');
     const path = `${this.api}/groups/${groupName}/contents`
-    const response = fetch(path, { 
+    const response = await fetch(path, { 
       method: 'POST', 
       body: JSON.stringify({ location: location }),
       headers: groupHeaders 
     }).catch(_ => {})
     if (!response.ok) return this.toast(response.statusText)
     const { contentLocation } = await response.json()
-    console.log('ok');
     this.updateGroup(groupName)
     return this.toast("Content saved")
   }
-  moveContentItem(location, target, moveWhere) {
-    target.insertBefore(wtkContItem, target.lastChild)
-  }
-
   followPath(cj, path) {
-    /**
-     * follows a path on the given data to retrieve a value
-     *
-     * @example
-     * var data = { foo : { bar : "abc" } };
-     * followPath(data, "foo.bar"); // "abc"
-     * 
-     * @param  {Object} data the object to get a value from
-     * @param  {String} path a path to a value on the data object
-     * @return the value of following the path on the data object
-     */
-    console.log('-----------------------------------------');
-    console.log(cj);
     if (cj[path].wtkMetaValue) {
       return cj[path].wtkMetaValue
     }
@@ -454,18 +364,8 @@ class wtk {
       return cj[path]
     }
   }
-  bindSingleElementHref(data, element) {
-    /**
-     * sets value of an element based on it's data-value attribute
-     * 
-     * @param  {Object}  data     the data source
-     * @param  {Element} element  the element
-     */
+  bindSingleElementHref(cj, element) {
     var path = element.getAttribute("wtk-href");
-    // var pathA=path.split('((')
-    // var pathA=pathA.split('))')
-    // var pathA=str.substring(str.lastIndexOf("((")+1,str.lastIndexOf("))"));
-    // var pathA=path.split(/[(())]/);
     var pathA = path.match(/(\[\()(.*?)(\)\])/g)
     if (pathA == null) { return }
     pathA = pathA.map((val, key) => {
@@ -477,14 +377,13 @@ class wtk {
     if (element.nodeName == 'A') {
       let o = path
       pathA.forEach((val, key) => {
-        let value = this.followPath(data, val);
+        let value = this.followPath(cj, val);
         o = o.replace('[(' + val + ')]', value)
       })
       element.href = o
     }
   }
   bindSingleElement(cj, element) {
-    console.log(cj);
     var path = element.getAttribute("wtk-data");
     if (element.nodeName == 'IMG') {
       element.src = this.followPath(cj, path);
@@ -494,27 +393,11 @@ class wtk {
     }
   }
   bindDataToTemplate(cj, element) {
-    /**
-     * Binds data object to an element. Allows arbitrary nesting of fields
-     *
-     * @example
-     * <div class="user">
-     *   <p data-value="name"></p>
-     * </div>
-     * 
-     * var element = document.querySelector(".user");
-     * bind({ name : "Nick" }, element);
-     * 
-     * @param  {Object}  data     the data to bind to an element
-     * @param  {Element} element  the element to bind data to
-     */
-    console.log(element);
     var holders = element.querySelectorAll("[wtk-data]");
     [].forEach.call(holders, this.bindSingleElement.bind(this, cj));
 
     var holdersHref = element.querySelectorAll("[wtk-href]");
     [].forEach.call(holdersHref, this.bindSingleElementHref.bind(this, cj));
   }
-  // methods
 }
 export default wtk

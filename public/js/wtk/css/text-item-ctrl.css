@@ -650,6 +650,11 @@
     display: -webkit-flex;
     display: flex; }
   #wtk__textItemWrapper .wtk-layout-column {
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
     flex-direction: column; }
   #wtk__textItemWrapper .wtk-wrap {
     flex-wrap: wrap; }

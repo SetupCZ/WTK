@@ -1,4 +1,7 @@
 'use strict';
+import wtk from '../wtk.js'
+import validateInput from '../wtkValidateInput.js'
+
 class wtkNewGroupCtrl extends HTMLElement{
   constructor(args) {
     super();
@@ -53,7 +56,7 @@ class wtkAlocNewGroup extends HTMLElement {
     this.wtkName=this.getAttribute("wtk-name")
     this.wtkGroupName=this.getAttribute("wtk-group-name")
     this.editGroup=this.wtkGroupName!=null ? true : false
-    this.groupAttrs=[]
+    this.groupAttrs={}
     
     
     this._alocNewGroupInit()
@@ -228,14 +231,14 @@ class wtkAlocNewGroup extends HTMLElement {
 
     this._updateAttrs(body)
   }
-  _updateAttrs(body){
-    this.groupAttrs.push(body)
+  _updateAttrs(attr){
+    this.groupAttrs[attr.wtkAttrName] = attr
     let groupAttr = document.createElement('div')
         groupAttr.innerHTML=`
           <code style="display: inline-block; background-color:lightgrey; padding:5px 15px; border-radius:3px; margin:10px 0; color:grey;">
-            &lt;input type="${body.wtkAttrType}" label="${body.wtkAttrLabel}" name="${body.wtkAttrName}" pattern="${body.wtkAttrRegex}" ${body.wtkAttrReq} /&gt;
+            &lt;input type="${attr.wtkAttrType}" label="${attr.wtkAttrLabel}" name="${attr.wtkAttrName}" pattern="${attr.wtkAttrRegex}" ${attr.wtkAttrReq} /&gt;
           </code>
-          <button class="wtkDropAttr" wtk-attr-pos="${this.groupAttrs.length-1}">ODEBRAT</button>
+          <button class="wtkDropAttr" wtk-attr-name="${attr.wtkAttrName}">ODEBRAT</button>
         ` //<= POZOR NEMAZAT
     let wtkAttributesHidden=this.target.querySelector('.wtkAttributesHidden')
         wtkAttributesHidden.appendChild(groupAttr)
@@ -245,11 +248,9 @@ class wtkAlocNewGroup extends HTMLElement {
   _dropAttr(evt){
     evt.preventDefault()
     const target=evt.target
-    let attrPos=target.getAttribute('wtk-attr-pos')
-    console.log(target.parentNode)
-    target.parentNode.parentNode.removeChild(target.parentNode)
-    this.groupAttrs.splice(attrPos, 1)
-    console.log(this.groupAttrs)
+          target.parentNode.parentNode.removeChild(target.parentNode)
+    const attrName=target.getAttribute('wtk-attr-name')
+    delete this.groupAttrs[attrName]
   }
   async _submitAlocNewGroup(evt){
     evt.preventDefault();

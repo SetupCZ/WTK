@@ -278,7 +278,7 @@ module.exports={
       })
       .then(([alocData, alocDataByName]) => {
         // check if alocData is empty
-        if (alocData == null) { alocData.alocData = { alocData: [] } }
+        if (alocData == null) { alocData = {} }//alocData.alocData = { alocData: [] } }
         // check if name exists
         if (alocDataByName != null) { throw ('This name allready exists!') }
 
@@ -292,7 +292,8 @@ module.exports={
           wtkType: 'group',
           wtkInsertDate: new Date()
         }
-        alocData.alocData.push(groupMetaData)
+        alocData[vData.wtkName] = groupMetaData
+        // alocData.alocData.push(groupMetaData)
         // edit aloc data
         // crate new dir
         const editAlocDataPromise = wtkIndex.editAlocData(alocData)
@@ -374,13 +375,14 @@ module.exports={
       return wtkIndex.getAlocData()
       .then((alocData) => {
         console.log(alocData);
-        for (let val of alocData.alocData) {
-          console.log(val);
-          if (val.wtkName == wtkName) {
-            val.wtkVisible = false
-            break
-          }
-        }
+        delete alocData[wtkName]
+        // for (let val of alocData.alocData) {
+        //   console.log(val);
+        //   if (val.wtkName == wtkName) {
+        //     val.wtkVisible = false
+        //     break
+        //   }
+        // }
         return wtkIndex.editAlocData(alocData)
       })
       .then((response) => {
@@ -392,29 +394,27 @@ module.exports={
       })
     })
   },
-  // TODO: 
   addContentToGroup:function(wtkName, location){
     return new Promise((resolve, reject) => {
+      let selfDir
       wtkIndex.getAlocDataByName(wtkName)
       .then((alocData) => {
-        return wtkIndex.getItemsDataByDir(alocData.wtkDir)
+        selfDir = alocData.wtkDir
+        return wtkIndex.getMetaDataByDir(selfDir)
       })
       .then((itemsData) => {
-        // let visibleitemsData=wtkIndex.getVisibleItems(itemsData)
-        // let sorteditemsData=wtkIndex.sortitemsData(visibleitemsData)
-        // visibleitemsData.collection.items=sorteditemsData
-        // resolve(itemsData)
-        // {"href":"test7/contents/[object Object]","data":[],"links":[]}
-        console.log(itemsData.collection.items)
-        console.log('location',location)
-        let newGroupItems=wtkIndex.renderItems_groupItemsData([{wtkName:wtkName, wtkContentName:location, wtkContentVisible:true}])
-        itemsData.collection.items=itemsData.collection.items.concat(newGroupItems)
-        console.log('metaItems',itemsData.collection.items)
+        const newGroupItem = wtkIndex.createHAL(
+          `${location}`,
+          {
+            wtkVisible:true
+          }
+        )
 
-        return wtkIndex.addItemsData(itemsData, wtkName)
+        itemsData._embedded.items[location] = newGroupItem
+        return wtkIndex.addMetaData(itemsData, selfDir)
       })
       .then((itemsData) => {
-        return resolve(location)
+        return resolve({location: location})
       })
       .catch((err) => {
         console.log(err)
@@ -494,8 +494,6 @@ module.exports={
         }))
       })
       .then((contentData) => {
-        console.log('*-----------------------')
-        console.log('contentData',contentData)
         let sorted = contentData.sort((data) => {
           //...
         })
@@ -535,7 +533,7 @@ module.exports={
       })
       .then(([alocData, alocDataByName]) => {
         // check if alocData is empty
-        if (alocData == null) { alocData = {alocData:[]} }
+        if (alocData == null) { alocData = {} }//alocData.alocData = []
         // check if name exists
         if (alocDataByName != null) { throw('This name allready exists!') }
         // save alocData if err
@@ -549,9 +547,15 @@ module.exports={
           wtkType: 'content',
           wtkInsertDate: new Date()
         }
-        alocData.alocData.push(contentMetaData)
+        alocData[vData.wtkMetaName] = contentMetaData
+        // alocData.alocData.push(contentMetaData)
 
-        formMetaData = this.getContentsMetaData(vData)
+        const formMetaDataPrep = this.getContentsMetaData(vData)
+
+        formMetaData = Object.assign({}, formMetaDataPrep, vData)
+
+        console.log(formMetaData);
+        // return
         // edit aloc data
         // crate new dir
         let editAlocDataPromise = wtkIndex.editAlocData(alocData)
@@ -635,12 +639,13 @@ module.exports={
     return new Promise((resolve, reject) => {
       wtkIndex.getAlocData()
       .then((alocData) => {
-        for (let val of alocData.alocData) {
-          if (val.wtkName == wtkName) {
-            val.wtkVisible = false
-            break
-          }
-        }
+        delete alocData[wtkName]
+        // for (let val of alocData.alocData) {
+        //   if (val.wtkName == wtkName) {
+        //     val.wtkVisible = false
+        //     break
+        //   }
+        // }
 
         return wtkIndex.editAlocData(alocData)
       })
@@ -719,6 +724,7 @@ module.exports={
           wtkEditDate: new Date(),
         }
         itemHref = `${wtkName}/items/${itemMetaData.wtkID}`
+
         const halItemsData = wtkIndex.createHAL(
           itemHref,
           {
@@ -864,7 +870,6 @@ module.exports={
       })
       .then((metaData) => {
         
-        console.log(metaData);
         // let visibleMetaData=wtkIndex.getVisibleItems(metaData)
         // let sortedMetaData=wtkIndex.sortMetaData(visibleMetaData)
         // visibleMetaData.collection.items=sortedMetaData

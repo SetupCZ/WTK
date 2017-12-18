@@ -1,4 +1,7 @@
 'use strict';
+import wtk from '../wtk.js'
+import validateInput from '../wtkValidateInput.js'
+
 class wtkContentCtrl extends HTMLElement{
   constructor(args) {
     super();
@@ -58,7 +61,7 @@ class wtkContentCtrl extends HTMLElement{
     this.target.appendChild(trashButton)
   }
   _editClick(evt){
-    this.wtkClass._fetchWtkDep(
+    this.wtkClass.fetchWtkDep(
       `${this.wtkClass.base}/js/wtk-new-content.js`, 
       null, 
       this.target) 
@@ -85,7 +88,7 @@ class wtkContentCtrl extends HTMLElement{
     this.parentNode.remove()
   }
   _newTextClick(evt){
-    this.wtkClass._getTinyMCEJS()
+    this.wtkClass.getTinyMCEJS()
     .then((response) => {
       this._tinymceLoaded()
     }).catch((err) => {
@@ -562,7 +565,7 @@ class wtkItemCtrl extends HTMLElement {
     wtkTextTinyMCE.classList.add('wtk-hidden')
     if (this.parentNode.querySelector('wtk-new-text-item')!=null) { return }
 
-    this.wtkClass._getTinyMCEJS()
+    this.wtkClass.getTinyMCEJS()
     .then((data) => {
       let wtkTinyMCE=this.parentNode.querySelector('wtk-tinymce')
           wtkTinyMCE.classList.add('wtk-hidden')
@@ -836,7 +839,7 @@ class wtkGroupCtrl extends HTMLElement {
     this.target.appendChild(trashButton)
   }
   _itemEditClick(evt){
-    this.wtkClass._fetchWtkDep(
+    this.wtkClass.fetchWtkDep(
       `${this.wtkClass.base}/js/wtk-new-group.js`, 
       null, 
       this.target) 

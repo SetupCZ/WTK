@@ -1,4 +1,7 @@
 'use strict';
+import wtk from '../wtk.js'
+import validateInput from '../wtkValidateInput.js'
+
 class wtkNewContentCtrl extends HTMLElement{
   constructor(args) {
     super();
@@ -39,7 +42,6 @@ class wtkNewContentCtrl extends HTMLElement{
           wtkAlocNewCont.setAttribute('wtk-ingroup',this.wtkGroupName)
         }
     document.body.appendChild(wtkAlocNewCont)    
-    // this.wtkClass.__fetchWtkDep(null, 'wtk-aloc-new-content', document.body)
   }
 }
 
@@ -57,7 +59,7 @@ class wtkAlocNewContent extends HTMLElement {
     this.wtkContName=this.getAttribute("wtk-cont-name")
     this.wtkGroupName=this.getAttribute("wtk-ingroup")
     this.editContent=this.wtkContName!=null ? true : false  
-    this.groupAttrs=[]
+    this.groupAttrs={}
     
     this._alocNewContInit()
   }
@@ -158,42 +160,34 @@ class wtkAlocNewContent extends HTMLElement {
     }
   }
   async _initAttrForCont(){
-    if (!this.wtkGroupName) { return }
+    if (!this.wtkGroupName) return 
 
     const attrWrapper=document.createElement('div')
           attrWrapper.classList.add('wtkAttrWrapper','wtk-full-shrink')
 
-    const attrs=this.alocNewContForm.querySelector('div .wtk-layout')
-          attrs.appendChild(attrWrapper)
+    const attrsElem=this.alocNewContForm.querySelector('div .wtk-layout')
+          attrsElem.appendChild(attrWrapper)
     // this.alocNewContForm.insertBefore(attrWrapper, this.alocNewContForm.querySelector('div div'))
     const path = `${this.wtkClass.apiOpen}/groups/${this.wtkGroupName}`
-    const response = fetch(path).catch(_ => {})
+    const response = await fetch(path).catch(_ => {})
     if (!response.ok) return this.wtkClass.toast(response.statusText)
     const cj = await response.json()
-          cj.collection.items.forEach((val, key) => {
-            let wtkAttrType=val.data.find((data) => {
-              return data.name=="wtkAttrType"
-            }).value
-            this.groupAttrs.push({
-              wtkMetaName:val.href.replace('/',''), 
-              wtkMetaValue:"", 
-              wtkMetaAttr:wtkAttrType, 
-              wtkMetaAttrName:""
-            })
-            this._selectAttrType(wtkAttrType, val, attrWrapper)
-          })
+
+    const attrs = cj.groupAttributes
+    Object.keys(attrs)
+    .forEach((val, key) => {
+      this._selectAttrType(attrs[val], attrWrapper)
+    })
+    this.groupAttrs = cj.groupAttributes // TODO: check for conflict, may need to copy
   }
-  _selectAttrType(type, item, target){
-    // let opt=evt.target
-    // let parent=this.target
-    // console.log(parent)
-    // console.log(this.target.querySelector('.wtkAttrValue'))
+  _selectAttrType(attr, target){
+    const type = attr.wtkAttrType
     let attrElem
-    if (type=="text") { attrElem=this._loadNewInputAttr(type, item) }
-    if (type=="password") { attrElem=this._loadNewInputAttr(type, item) }
-    if (type=="email") { attrElem=this._loadNewInputAttr(type, item) }
-    if (type=="tel") { attrElem=this._loadNewInputAttr(type, item) }
-    if (type=="date") { attrElem=this._loadNewInputAttr(type, item) }
+    if (type=="text") { attrElem=this._loadNewInputAttr(type, attr) }
+    if (type=="password") { attrElem=this._loadNewInputAttr(type, attr) }
+    if (type=="email") { attrElem=this._loadNewInputAttr(type, attr) }
+    if (type=="tel") { attrElem=this._loadNewInputAttr(type, attr) }
+    if (type=="date") { attrElem=this._loadNewInputAttr(type, attr) }
     if (type=="checkbox") { return }
     if (type=="selecet") { return }
 
@@ -202,28 +196,17 @@ class wtkAlocNewContent extends HTMLElement {
           attrItemElem.innerHTML=attrElem
     target.appendChild(attrItemElem)
   }
-  _loadNewInputAttr(type, item){
-    let wtkAttrName=item.data.find((data) => {
-      return data.name=="wtkAttrName"
-    }).value
-    let wtkAttrLabel=item.data.find((data) => {
-      return data.name=="wtkAttrLabel"
-    }).value
-    let wtkAttrRegex=item.data.find((data) => {
-      return data.name=="wtkAttrRegex"
-    }).value
-    let wtkAttrReq=item.data.find((data) => {
-      return data.name=="wtkAttrReq"
-    }).value
-    let pattern=wtkAttrRegex!="" ? `pattern="${wtkAttrRegex}"` : ""
+  _loadNewInputAttr(type, attr){
+    // TODO: type < obsolete
+    let pattern=attr.wtkAttrRegex!="" ? `pattern="${attr.wtkAttrRegex}"` : ""
     
     return `<div class="inputWrapper">
-              <label for="${wtkAttrName}">${wtkAttrLabel}</label>
+              <label for="${attr.wtkAttrName}">${attr.wtkAttrLabel}</label>
               <input 
-                type="${type}" 
-                name="${wtkAttrName}"
+                type="${attr.wtkAttrType}" 
+                name="${attr.wtkAttrName}"
                 ${pattern}
-                ${wtkAttrReq} />
+                ${attr.wtkAttrReq} />
                 <div class="errMsg">
                   <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
                   <div class="errMsg required">Toto pole musí být vyplněno!</div>
@@ -276,7 +259,8 @@ class wtkAlocNewContent extends HTMLElement {
       }
     }
     if (!validForm) { return this.wtkClass.toast("invalid form") }
-    
+    // console.log(body);
+    // return
     // img
     const contFormData = new FormData(evt.target)
     const imgForm = new FormData()
@@ -289,9 +273,7 @@ class wtkAlocNewContent extends HTMLElement {
       body.wtkMetaName = this.editContent ? 
           `${this.wtkName || this.wtkContName}`: 
           `${this.wtkGroupName}/contents/${new Date().getTime()}`
-      body.groupAttrs = this.groupAttrs.map(val => {
-        val.wtkMetaValue = this.newContentWrapper.querySelector(`*[name="${val.wtkMetaName}"]`).value
-      })
+      body.groupAttrs = this.groupAttrs
       path = this.editContent ? 
           `${this.wtkClass.api}/groups/${this.wtkName || this.wtkContName}`: 
           `${this.wtkClass.api}/contents`
@@ -306,6 +288,8 @@ class wtkAlocNewContent extends HTMLElement {
     // add general metadata
       
     const wtkSettings = await this.wtkClass.getGeneralMetadata()
+    console.log(wtkSettings);
+    // if (!wtkSettings) 
     body.wtkMetaUrl=window.location.href
     body.wtkMetaOgLocale=wtkSettings.metaData.facebook.locale
     body.wtkMetaOgSitename=wtkSettings.metaData.facebook.sitename
@@ -336,11 +320,15 @@ class wtkAlocNewContent extends HTMLElement {
     
     const { location } = await response.json() //TODO: edit the {} to sute the architecture ... same on line 339 
     
-    // only in group whne editing 
-    if (this.wtkGroupName && !this.editContent) 
-      return this.wtkClass.addContentToGroup(location, this.wtkGroupName) 
+    // only in group when editing 
+    if (this.wtkGroupName && !this.editContent) {
+      console.log('§s');
+      this.wtkClass.addContentToGroup(location, this.wtkGroupName) 
+    }
+    else{
+      this.wtkClass.updateContent(location)
+    }
   
-    this.wtkClass.updateContent(location)
     
     this._closeAlocNewContClick()
     this.wtkClass.toast("Content přidán.")

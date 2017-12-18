@@ -26,11 +26,12 @@ const urlGlobalReg = new RegExp(/^(.*)$/)
 const pathGlobalReg = new RegExp(/^((?!\.\.\/).)*(\.jpg|png|json|html)$/i)
 
 function returnAlocDataByName(alocData, name, resolve) {
-  return alocData.alocData.find((val, key) => {
-    // console.log(val.wtkName, name)
-    // console.log(val.wtkName==name)
-    return val.wtkName==name
-  })
+  return alocData[name] // alocdata={}
+  // return alocData.alocData.find((val, key) => {
+  //   // console.log(val.wtkName, name)
+  //   // console.log(val.wtkName==name)
+  //   return val.wtkName==name
+  // })
 }
 module.exports={
   sendMail:function(body){
@@ -104,10 +105,7 @@ module.exports={
 
   getAlocData:function() {
     return new Promise((resolve, reject) => {
-      console.log('inGetALocData');
-      // return saved alocData if we have them
-      console.log(`alocDataGlobal: ${alocDataGlobal}\n length: ${alocDataGlobal.length}`);
-      if (alocDataGlobal.alocData) 
+      if (Object.keys(alocDataGlobal).length!=0) 
         return resolve(alocDataGlobal) 
       
       // read alocData.json if we dont have it saved
@@ -123,7 +121,7 @@ module.exports={
   getAlocDataByName:function(wtkName, newCont) {
     return new Promise((resolve, reject) => {
       // alocDataGlobal is set
-      if (alocDataGlobal.alocData) { 
+      if (Object.keys(alocDataGlobal).length != 0) { 
         let alocDataByName = 
           returnAlocDataByName(alocDataGlobal, wtkName);
         if (!alocDataByName) {
@@ -535,9 +533,11 @@ module.exports={
       }
         
         
-        
+      
+      // TODO: revisit
       let groupName=data.wtkMetaName.split('/contents/')[0] 
       if (data.groupAttrs) {
+        return resolve(data)
         this.getAlocDataByName(groupName)
         .then((alocData) => {
           return this.getMetaDataByDir(alocData.wtkDir)
@@ -549,24 +549,24 @@ module.exports={
             valAttr.wtkMetaAttr=xss(valAttr.wtkMetaAttr, filterEverything)
             valAttr.wtkMetaAttrName=xss(valAttr.wtkMetaAttrName, filterEverything)
 
-            let attrMeta = metaData.collection.items.find((item) => {
-              return item.href==`${valAttr.wtkMetaName}/`
-            }).data
-            let attrMetaTitle = attrMeta.find((dataItem) => {
-              return dataItem.name=="wtkAttrLabel"
-            }).value
-            let attrMetaRegEx = attrMeta.find((dataItem) => {
-              return dataItem.name=="wtkAttrRegex"
-            }).value
-            let attrMetaReq = attrMeta.find((dataItem) => {
-              return dataItem.name=="wtkAttrReq"
-            }).value
+            // let attrMeta = metaData.collection.items.find((item) => {
+            //   return item.href==`${valAttr.wtkMetaName}/`
+            // }).data
+            // let attrMetaTitle = attrMeta.find((dataItem) => {
+            //   return dataItem.name=="wtkAttrLabel"
+            // }).value
+            // let attrMetaRegEx = attrMeta.find((dataItem) => {
+            //   return dataItem.name=="wtkAttrRegex"
+            // }).value
+            // let attrMetaReq = attrMeta.find((dataItem) => {
+            //   return dataItem.name=="wtkAttrReq"
+            // }).value
 
 
             if ( !wtkAttrTypeReg.test(valAttr.wtkMetaAttr) ) return reject("Attribute TYPE is wrong!")
             if ( !wtkAttrNameReg.test(valAttr.wtkMetaName) ) return reject("Attribute NAME is wrong!")
 
-            [valAttr.wtkMetaName]=xss([valAttr.wtkMetaName], filterEverything)
+            // valAttr.wtkMetaName=xss(valAttr.wtkMetaName, filterEverything)
               
             let attrValueReg = new RegExp(attrMetaRegEx)
             if (attrMetaReq=="required" && valAttr.wtkMetaValue=="") return reject("All required values must be filled!")
@@ -619,19 +619,21 @@ module.exports={
       data.wtkName=xss(data.wtkName, filterEverything)
 
       // test groupAttrs
-      data.groupAttrs.forEach((val, key) => {
+      const attrs = data.groupAttrs
+      Object.keys(attrs)
+      .forEach((val, key) => {
         // filter html and script
-        val.wtkAttrType=xss(val.wtkAttrType, filterEverything)
-        val.wtkAttrName=xss(val.wtkAttrName, filterEverything)
-        val.wtkAttrLabel=xss(val.wtkAttrLabel, filterEverything)
-        val.wtkAttrRegEx=xss(val.wtkAttrRegEx, filterEverything)
-        val.wtkAttrReq=xss(val.wtkAttrReq, filterEverything)
+        attrs[val].wtkAttrType=xss(attrs[val].wtkAttrType, filterEverything)
+        attrs[val].wtkAttrName=xss(attrs[val].wtkAttrName, filterEverything)
+        attrs[val].wtkAttrLabel=xss(attrs[val].wtkAttrLabel, filterEverything)
+        attrs[val].wtkAttrRegEx=xss(attrs[val].wtkAttrRegEx, filterEverything)
+        attrs[val].wtkAttrReq=xss(attrs[val].wtkAttrReq, filterEverything)
 
-        if ( !wtkAttrTypeReg.test(val.wtkAttrType) ) return reject("Attribute TYPE is wrong!")
-        if ( !wtkAttrNameReg.test(val.wtkAttrName) ) return reject("Attribute NAME is wrong!")
-        if ( !wtkAttrLabelReg.test(val.wtkAttrLabel) ) return reject("Attribute LABEL is wrong!")
-        if ( !wtkAttrRegExReg.test(val.wtkAttrRegEx) ) return reject("Attribute REGEXP is wrong!")
-        if ( !wtkAttrReqReg.test(val.wtkAttrReq) ) return reject("Attribute REQUIRED is wrong!")
+        if ( !wtkAttrTypeReg.test(attrs[val].wtkAttrType) ) return reject("Attribute TYPE is wrong!")
+        if ( !wtkAttrNameReg.test(attrs[val].wtkAttrName) ) return reject("Attribute NAME is wrong!")
+        if ( !wtkAttrLabelReg.test(attrs[val].wtkAttrLabel) ) return reject("Attribute LABEL is wrong!")
+        if ( !wtkAttrRegExReg.test(attrs[val].wtkAttrRegEx) ) return reject("Attribute REGEXP is wrong!")
+        if ( !wtkAttrReqReg.test(attrs[val].wtkAttrReq) ) return reject("Attribute REQUIRED is wrong!")
       })
 
       return resolve(data)

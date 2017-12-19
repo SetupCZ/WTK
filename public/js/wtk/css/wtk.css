@@ -2228,7 +2228,8 @@ wtk-content-item {
 wtk-search form {
   display: inline-block;
   background-color: inherit;
-  position: relative; }
+  position: relative;
+  background-color: inherit; }
   wtk-search form > input[type="search"] {
     border: none;
     background-color: inherit;

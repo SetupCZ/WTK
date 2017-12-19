@@ -422,10 +422,6 @@ module.exports={
       });
     });
   },
-  // TODO: 
-  editContentInGroup:function(wtkName, location){
-    let editedMetaItem=wtkIndex.editItem(metaData, itemHref, validatedFormData)
-  },
   getContentsMetaData: function (vData) {
     return {
       "wtkMetaName": {
@@ -518,6 +514,7 @@ module.exports={
     return new Promise((resolve, reject) => {
       let staleAlocData={};
       let selfDir
+      let selfHref
       let cjMetaData
       let cjItemsData
       let formMetaData
@@ -537,24 +534,34 @@ module.exports={
         // check if name exists
         if (alocDataByName != null) { throw('This name allready exists!') }
         // save alocData if err
+        selfHref = vData.wtkMetaName
         selfDir = vData.wtkMetaName.replace('contents/','') 
-
+        //////////////////////////////////////
+        // Save alocData
         // push new alocData
         contentMetaData = {
-          wtkName: vData.wtkMetaName,
+          wtkName: selfHref,
           wtkDir: selfDir,
           wtkVisible: true,
           wtkType: 'content',
           wtkInsertDate: new Date()
         }
-        alocData[vData.wtkMetaName] = contentMetaData
+        alocData[selfHref] = contentMetaData
         // alocData.alocData.push(contentMetaData)
 
-        const formMetaDataPrep = this.getContentsMetaData(vData)
+        //////////////////////////////////////
+        // Save metaData
+        formMetaData = this.getContentsMetaData(vData)
+        console.log(vData.groupAttrs);
+        // vData.groupAttrs = 
+        Object.keys(vData.groupAttrs)
+        .forEach(key => {
+          vData.groupAttrs[key].wtkMetaValue = vData[key]
+        })
+        
+        // formMetaData = Object.assign({}, formMetaDataPrep, vData)
 
-        formMetaData = Object.assign({}, formMetaDataPrep, vData)
-
-        console.log(formMetaData);
+        console.log(vData.groupAttrs);
         // return
         // edit aloc data
         // crate new dir
@@ -564,7 +571,7 @@ module.exports={
       })
       .then(([alocData, newDir]) => {
         const halMetaData = wtkIndex.createHAL(
-          selfDir,
+          selfHref,
           {
             "groupAttributes": vData.groupAttrs?vData.groupAttrs:[],
             "wtkVisible": contentMetaData.wtkVisible,
@@ -572,7 +579,7 @@ module.exports={
             ...formMetaData
           },
           {
-            "items": { "href": `${selfDir}/items` }
+            "items": { "href": `${selfHref}/items` }
           },
           {
             "items": {}
@@ -656,6 +663,37 @@ module.exports={
       .catch((err) => {
         return reject(err)
       });
+    });
+  },
+  dropContentInGroup: function (wtkName, groupName) {
+    return new Promise((resolve, reject) => {
+      let alocDataTemp
+      let selfDir
+
+      const alocDataPromise = wtkIndex.getAlocData()
+      const alocDataByNamePromise = wtkIndex.getAlocDataByName(groupName)
+      Promise.all([alocDataPromise, alocDataByNamePromise])
+        .then(([alocData, alocDataByName]) => {
+          alocDataTemp = alocData
+          selfDir = alocDataByName.wtkDir
+          return wtkIndex.getMetaDataByDir(selfDir)
+        })
+        .then((metaData) => {
+          delete metaData._embedded.items[wtkName.replace('/contents', '')]
+          delete alocDataTemp[wtkName]
+
+          const alocDataTempPromise = wtkIndex.editAlocData(alocDataTemp)
+          const metaDataPromise = wtkIndex.addMetaData(metaData, selfDir)
+          // return
+          return Promise.all([alocDataTempPromise, metaDataPromise])
+        })
+        .then(([alocData, metaData]) => {
+          // TODO: resolve object everywhere
+          return resolve({location: metaData._links.self.href})
+        })
+        .catch((err) => {
+          return reject(err)
+        });
     });
   },
   getItem:function (wtkName, wtkID){
@@ -940,6 +978,7 @@ module.exports={
     return new Promise((resolve, reject) => {
       let wtkTypeCont=true
       let cj={}
+      console.log(wtkName);
       wtkIndex.getAlocDataByName(wtkName)
       .then((alocData) => {
         console.log(alocData)
@@ -949,7 +988,7 @@ module.exports={
         }
         else{
           wtkTypeCont=false
-          return wtkIndex.getItemsDataByDir(alocData.wtkDir)
+          return wtkIndex.getMetaDataByDir(alocData.wtkDir)
         }
       })
       .then((metaData) => {
@@ -971,15 +1010,19 @@ module.exports={
         return reject(err)
       });
     });
-     function searchGroup(metaDataGroup){
-
+    function searchGroup(metaDataGroup){
       return new Promise((resolve, reject) => {
         // let searchedItems=[]
         let searchAll=[]
         let searchAllCont=[]
-        metaDataGroup.collection.items.forEach((valC, key) => {
+        const items = metaDataGroup._embedded.items
+        console.log(items);
+        Object.keys(items)
+        .forEach(key => {
+          console.log(items[key]._links.self.href);
+          // Push promise for each item
           searchAll.push(new Promise((resolve, reject) => {
-            wtkIndex.getAlocDataByName(valC.href)
+            wtkIndex.getAlocDataByName(items[key]._links.self.href)
             .then((alocData) => {
               return wtkIndex.getMetaDataByDir(alocData.wtkDir)
             })
@@ -987,7 +1030,7 @@ module.exports={
               return searchContent(metaData)
             })
             .then((data) => {
-              console.log('data<-', data)
+              // console.log('data<-', data)
               // console.log('data<-', data)
               return resolve(data)
             })
@@ -1004,11 +1047,13 @@ module.exports={
         return Promise.all(searchAll)
         .then((searchedItems) => {
           console.log('cont')
-          console.log(searchedItems)
+          // console.log(searchedItems)
+          // Gets rid of null in array
           while (searchedItems.indexOf(null) !== -1) {  
             searchedItems.splice(searchedItems.indexOf(null),1)
           }
           if (searchedItems.length==0) { return resolve(null)}
+          console.log(searchedItems.length);
           return resolve([].concat.apply([], searchedItems))
           // return resolve(searchedItems)
         })
@@ -1025,7 +1070,7 @@ module.exports={
         // console.log(metaData)
         options.forEach((val, key) => {
           if (val=="wtkCont") {
-            searchAll.push(searchContentItems(metaData.collection.href, val, metaData))  
+            searchAll.push(searchContentItems(metaData._links.self.href, val, metaData))  
           }
           else{
             searchAll.push(searchContentMeta(metaData, val))
@@ -1034,9 +1079,11 @@ module.exports={
         return Promise.all(searchAll)
         .then((searchedItems) => {
           // console.log('searchedItems',searchedItems)
+          // Gets rid of null in array
           while (searchedItems.indexOf(null) !== -1) {  
             searchedItems.splice(searchedItems.indexOf(null),1)
           }
+          console.log('searchedItems',typeof searchedItems)
           searchedItems=[].concat.apply([], searchedItems)
           // console.log('searchedItems ------')
           // console.log(searchedItems)
@@ -1071,13 +1118,24 @@ module.exports={
     
     function searchContentMeta(metaData, valOpt){
       return new Promise((resolve, reject) => {
-        // console.log('--------------------------')
-        // console.log('--------------------------')
+        console.log('--------------------------')
+        console.log('--------------------------')
         // console.log(metaData)
+        console.log(valOpt)
+        if (!metaData[valOpt]) return resolve(null)
+        if (String(metaData[valOpt].wtkMetaValue)
+            .toLowerCase()
+            .indexOf(String(query).toLowerCase()) !== -1) {
+          console.log(metaData[valOpt].wtkMetaValue);
+          console.log(query);
+          return resolve(metaData)//[valOpt].wtkMetaValue)
+        }
+        return resolve(null)
+
+        
         let item=metaData.collection.items.find((val, key) => {
           // console.log('///////////////////////')
           // console.log(val)
-          // console.log(valOpt)
           // console.log(val.data[2].value)
           // console.log(query)
           // // console.log(String(val.data[2].value).toLowerCase())

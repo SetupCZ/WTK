@@ -17,3 +17,4 @@ x _getTinyMCEJS > getTinyMCEJS
   get set for cj
 x groupAttributes > to object
   download css and html ... add wtk function
+  on drop delete old data

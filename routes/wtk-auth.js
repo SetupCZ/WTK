@@ -129,7 +129,7 @@ router.delete('/groups/:name/contents/:contName', function(req, res, next) {
   let name=req.params.name
   let contName=req.params.contName
   // validate name 
-  wtk.dropContent(name+'/contents/'+contName)
+  wtk.dropContentInGroup(name+'/contents/'+contName, name)
   .then((data) => {
     return res.status(200).send(data)
   })

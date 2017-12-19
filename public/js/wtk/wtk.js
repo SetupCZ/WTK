@@ -79,7 +79,6 @@ class wtk {
 
     const loadedScripts = document.querySelectorAll(`*[src="${path}"]`)
 
-    console.log(`${/^(https)?$/.test(path)}`);
     if (loadedScripts.length == 0) {
       const wtkScriptJS = document.createElement('script')
       wtkScriptJS.type = /^(https)+.+$/.test(path)? "":"module" //TODO: babel 
@@ -136,7 +135,6 @@ class wtk {
         items[key]
       )
     })
-    console.log(this.user);
     if (this.user) {
       this.fetchWtkDep(
         `${this.base}/js/wtk-content-controls.js`,
@@ -204,70 +202,38 @@ class wtk {
     target.setCJ(await response.json())
     return await response.json()
   }
-  async visibleItems(content, wtkGroupName) {
-    return new Promise(async (resolve, reject) => {
-      return resolve(content)
-      // TODO: visit this
-      if (!wtkGroupName) { return resolve(content) }
-      const path = `${this.apiOpen}/groups/${wtkGroupName}`
-      const response = await fetch(path).catch(_ => {})
-      if (!response.ok) return this.toast(response.statusText)
-      const cj = await response.json()
-      const visibleItems = cj.groupAttributes
-      .map(val => {
-        return content.groupAttributes[val.wtkAttrName]
-        console.log(val);
-        // items
-      })
-
-      return
-      fetch()
-        .then((data) => {
-          return data.json()
-        })
-        .then((cj) => {
-          let itemsToSend = []
-          let formMetaData = [
-            "wtkMetaName/",
-            "wtkVisible/",
-
-            "wtkMetaTitle/",
-            "wtkMetaDescription/",
-            "wtkMetaAuthor/",
-
-            "wtkMetaOgUrl/",
-            "wtkMetaOgType/",
-            "wtkMetaOgLocale/",
-            "wtkMetaOgImage/",
-            "wtkMetaOgTitle/",
-            "wtkMetaOgSiteName/",
-            "wtkMetaOgDescription/",
-
-            "wtkMetaTwitterCard/",
-            "wtkMetaTwitterSite/",
-            "wtkMetaTwitterTitle/",
-            "wtkMetaTwitterDescription/",
-            "wtkMetaTwitterImage/",
-            "wtkMetaTwitterUrl/",
-
-          ]
-          items.forEach((val, key) => {
-            if (formMetaData[key] != undefined) {
-              return itemsToSend.push(val)
-            }
-            let item = cj._embedded.items.find((data) => {
-              return data.href == val.href
-            })
-            if (item != undefined) {
-              return itemsToSend.push(val)
-            }
-          })
-          return resolve(itemsToSend)
-        })
-        .catch((err) => {
-          return reject(err)
-        })
-    });
+  visibleItems(contentCJ, wtkGroupName, target) {
+    if (!wtkGroupName) { return contentCJ }
+    const groupElem =
+      target.closest(`wtk-group-meta[wtk-name="${wtkGroupName}"]`) 
+    const groupCJ = groupElem.getCJ()
+    const contentGATemp = {}
+    Object.keys(groupCJ.groupAttributes)
+    .forEach(key => {
+      contentGATemp[key] = contentCJ.groupAttributes[key]
+    })
+    const visibleItems = { ...contentCJ, ...contentGATemp}
+    return visibleItems
+    // const contMetaData = [
+    //   "wtkMetaName",
+    //   "wtkVisible",
+    //   "wtkMetaTitle",
+    //   "wtkMetaDescription",
+    //   "wtkMetaAuthor",
+    //   "wtkMetaOgUrl",
+    //   "wtkMetaOgType",
+    //   "wtkMetaOgLocale",
+    //   "wtkMetaOgImage",
+    //   "wtkMetaOgTitle",
+    //   "wtkMetaOgSiteName",
+    //   "wtkMetaOgDescription",
+    //   "wtkMetaTwitterCard",
+    //   "wtkMetaTwitterSite",
+    //   "wtkMetaTwitterTitle",
+    //   "wtkMetaTwitterDescription",
+    //   "wtkMetaTwitterImage",
+    //   "wtkMetaTwitterurl",
+    // ]
   }
   updateGroup(location) {
     const groupElem = 
@@ -357,6 +323,7 @@ class wtk {
     return this.toast("Content saved")
   }
   followPath(cj, path) {
+    if (!cj[path]) return
     if (cj[path].wtkMetaValue) {
       return cj[path].wtkMetaValue
     }

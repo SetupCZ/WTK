@@ -135,7 +135,7 @@ class wtkAdmin {
 
     this.wtkClass.toast('user saved!')
   }
-  _saveUserPswd(evt) {
+  async _saveUserPswd(evt) {
     evt.preventDefault()
     const target = evt.target
     let validForm = true
@@ -168,7 +168,7 @@ class wtkAdmin {
     if (!response.ok) return this.wtkClass.toast(response.statusText)
     this.wtkClass.toast('Password change succesfull!')
   }
-  _saveSecQ(evt) {
+  async _saveSecQ(evt) {
     evt.preventDefault()
     const target = evt.target
     let validForm = true

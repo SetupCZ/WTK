@@ -67,7 +67,9 @@ class wtkContentMetaElem extends  HTMLElement{
   connectedCallback(){
     this.wtkName=this.getAttribute('wtk-name')
     this.wtkGroupName=this.getAttribute('wtk-ingroup')
-    this.wtkMetaTemplate=this.innerHTML
+    this.wtkMetaTemplate = this.cloneNode(true)//this.innerHTML
+    // this.wtkMetaTemplate=this.innerHTML
+    
     this.cj = {}
     this.target=this
     if (this.wtkName!=null) { this.setAttribute('id', 'wtk_'+this.wtkName.replace('/','_')) }
@@ -94,9 +96,9 @@ class wtkContentMetaElem extends  HTMLElement{
   async _getContentData(name){
     const cj = await this.wtkClass.getContentData(this.wtkName, this.wtkGroupName, this.target, "content")
     if (!cj) return 
-    console.log(cj);
-    // const visibleItems = await this.wtkClass.visibleItems(cj, this.wtkGroupName).catch(_ => {})
-    this.wtkClass.bindDataToTemplate(cj, this.target)
+    const visibleItems = 
+      this.wtkClass.visibleItems(cj, this.wtkGroupName, this.target)
+    this.wtkClass.bindDataToTemplate(visibleItems, this.target)
   }
 }
 customElements.define('wtk-content-meta', wtkContentMetaElem);
@@ -129,7 +131,6 @@ class wtkGroupElem extends HTMLElement{
   
 }
 customElements.define('wtk-group', wtkGroupElem);
-
 // GROUP META
 class wtkGroupMetaElem extends HTMLElement{
   constructor(args){
@@ -260,6 +261,8 @@ class wtkSearchElem extends HTMLElement {
   connectedCallback(){
     this.wtkNames=this.getAttribute('wtk-names').split(',')
     this.wtkOpt=this.getAttribute('wtk-options').split(',')
+    // this.wtkSearchTemplate = this.cloneNode(true)//this.innerHTML
+    
     this.target=this
     
     this._searchElemInit()
@@ -280,8 +283,14 @@ class wtkSearchElem extends HTMLElement {
     this.searchInput.addEventListener('search', this._onKeyUp.bind(this))
     this.submitInput=this.target.querySelector('input[type="submit"]')
 
-    this.wtkSearchTemplate=this.target.querySelector('.wtkSearchTemplate')
-    this.wtkSTHtml=this.wtkSearchTemplate.innerHTML
+    // console.log(this.wtkSearchTemplate);
+    // TODO: finish template 
+    // if (this.wtkSearchTemplate=="") {
+      this.wtkSearchTemplate = 
+        this.target.querySelector('.wtkSearchTemplate')
+      this.wtkSTHtml = this.wtkSearchTemplate.innerHTML
+    // }
+      
 
     this.wtkSearchForm=this.target.querySelector('form')
     this.wtkSearchForm.addEventListener('submit', (evt) =>{ evt.preventDefault() })  
@@ -291,22 +300,26 @@ class wtkSearchElem extends HTMLElement {
     this._dropHint()
     if (query=="") { return }
     const queryPromises = this.wtkNames.map(val => {
-      const path = `${this.wtkClass.apiOpen}/search?
-          query=${query}&
-          wtkName=${val}&
-          wtkOpt=${this.wtkOpt}`
+      const path = `${this.wtkClass.apiOpen}/search?query=${query}&wtkName=${val}&wtkOpt=${this.wtkOpt}`
+      console.log(path);
+      console.log(path.trim());
+
       return fetch(path).catch((err) => {
         console.log(err)
       })
     })
     const queryResponses = await Promise.all(queryPromises)
-    const queryResFiltered = queryResponses
+    console.log(queryResponses);
+    const queryResFilteredPromise = queryResponses
       .filter(response => { return response.ok })
-      .map(async response => { return await response.json() })
-      .map(async cj => { return this._buildHint(cj) })
+      .map(response => { return response.json() })
+      // .map(cjListPromise => { this._buildHint(cjListPromise) })
 
+    const queryResFiltered = await Promise.all(queryResFilteredPromise)
     // TODO: add attr empty-msg
-    if (queryResFiltered.length==0) this._buildHint()
+    if (queryResFiltered.length==0) return this._buildHint()
+    
+    queryResFiltered.forEach(cjList => { this._buildHint(cjList) })
   }
   _dropHint(){
     this.wtkSearchTemplate.innerHTML=""
@@ -314,7 +327,8 @@ class wtkSearchElem extends HTMLElement {
         opacity: 0;
         pointer-events:none;`)
   }
-  _buildHint(cjList){
+  async _buildHint(cjList){
+    
     // let li=this.target.querySelector('li')
     let y = this.searchInput.getBoundingClientRect().height;
     this.wtkSearchTemplate.setAttribute('style',`
@@ -324,18 +338,12 @@ class wtkSearchElem extends HTMLElement {
     if (!cjList) {
       return this.wtkSearchTemplate.innerHTML="<li>Bohužel jsme nic nenašli.</li>"
     }
-    cjList.forEach((cj, key) => {
-      let stHtml=document.createElement('div')
-          stHtml.innerHTML=this.wtkSTHtml
-      this.wtkClass.bindDataToTemplate(cj._embedded.items, stHtml)
+    cjList.forEach(cj => {
+      const stHtml=document.createElement('div')
+            stHtml.innerHTML=this.wtkSTHtml
+          console.log(cj);
+      this.wtkClass.bindDataToTemplate(cj, stHtml)
       this.wtkSearchTemplate.innerHTML+=stHtml.innerHTML
-      // let newTemplateChild=document.createElement(this.wtkSearchTemplate.firstChild.tagName.toLowerCase())
-          // liNew.innerHTML=li.innerHTML
-
-      // ul.appendChild(liNew)
-      
-      // console.log(val)
-      // this.wtkClass.bindDataToTemplate(this.wtkClass.getVisibleItems(val, val.href), this.wtkSearchTemplate)
     })
   }
   _visibleItems(items, wtkGroupName){

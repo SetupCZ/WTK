@@ -1,3 +1,4 @@
+
 class wtk {
   constructor(args) {
     this.base = "/js/wtk"
@@ -115,9 +116,9 @@ class wtk {
     const items = cj._embedded.items
     Object.keys(items)
     .sort((valA, valB) => {
-      return items[valA].wtkPosition < items[valB].wtkPosition
+      return items[valA].wtkPosition > items[valB].wtkPosition
     })
-    .forEach((val, key) => {
+    .forEach(key => {
       let wtkWidth = items[key].wtkWidth
       let wtkHeight = items[key].wtkHeight
       let imgSize
@@ -125,12 +126,11 @@ class wtk {
         imgSize = { wtkWidth: wtkWidth, wtkHeight: wtkHeight }
       }
       let wtkType = items[key].wtkType
-
       this.addContentItem(
         items[key]._links.self.href,
         target,
         null,
-        wtkType,
+        items[key].wtkType,
         imgSize,
         items[key]
       )
@@ -200,7 +200,7 @@ class wtk {
     const response = await fetch(path).catch(_ => { })
     if (!response.ok) return false
     target.setCJ(await response.json())
-    return await response.json()
+    // return await response.json()
   }
   visibleItems(contentCJ, wtkGroupName, target) {
     if (!wtkGroupName) { return contentCJ }
@@ -284,7 +284,7 @@ class wtk {
       })
     }
     wtkContItem.setAttribute('wtk-item-href', path)
-
+    wtkContItem.innerHTML+=`Position: ${metaData.wtkPosition}`
     if (inserWhere == null) {
       target.appendChild(wtkContItem)
     }

@@ -1,5 +1,5 @@
   <!-- .wtk_alocNewContentWrapper is defined in wtk-new-content.js-->
-    
+  <!-- TODO: edit pattern -->
   <form action="" class="wtk-whiteframe-1dp">
     <button type="button" class="icon-button wtkCloseBtn" id="wtk__closeAlocNewContentBtn">x</button>
     <h1 class="wtk-headline wtk-margin-bottom">Vytvořit nový příspěvek</h1>
@@ -11,9 +11,18 @@
           <input 
               type="text" 
               name="wtkMetaTitle" 
-              pattern="^([a-zA-ZěščřžýáíéúůďťňóĚŠČŘŽÝÁÍÉŮÚŤĎŇ ])+$" 
+              pattern="^([0-9a-zA-ZěščřžýáíéúůďťňóĚŠČŘŽÝÁÍÉŮÚŤĎŇ ])+$" 
               required="required" 
-              title="Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!">
+              title="Musí obsahovat pouze malá/velká písmena čísla a mezery!">
+          <div class="errMsg">
+            <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
+            <div class="errMsg required">Toto pole musí být vyplněno!</div>
+          </div>
+        </div>
+        <!-- Link -->
+        <div class="inputWrapper">
+          <label for="">Link</label>
+          <input type="text" name="wtkMetaLink" pattern="^([a-zA-Z0-9_-])+$" required="required" title="Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!">
           <div class="errMsg">
             <div class="errMsg pattern">Musí obsahovat pouze malá/velká písmena bez diakritiky a čísla!</div>
             <div class="errMsg required">Toto pole musí být vyplněno!</div>

@@ -1,7 +1,36 @@
 import validateInput from './wtkValidateInput.js'
-import wtk from './wtk.js'
 const validateClass = new validateInput()
-const wtkClass = new wtk()
+
+class wtkBasic {
+  constructor(){
+    this.apiOpen = "/wtk"
+  }
+  toast(msg, mainErr) {
+    console.log(msg)
+    // let mainErr=errMsg.querySelector('.mad-main-errMsg')
+    //     mainErr.innerText=msg
+    //     mainErr.classList.add(err?'colE':'colC')
+    let toastElm = document.createElement('div')
+    toastElm.innerText = msg
+    toastElm.style.position = 'fixed'
+    toastElm.style.zIndex = 9999
+    toastElm.style.top = '8px'
+    toastElm.style.right = '8px'
+    toastElm.style.backgroundColor = '#212121'
+    toastElm.style.color = '#fff'
+    toastElm.style.borderRadius = '3px'
+    toastElm.style.padding = '4px 16px'
+    document.body.appendChild(toastElm)
+    setTimeout(function () {
+      toastElm.parentNode.removeChild(toastElm)
+      // mainErr.classList.remove('colE')
+      // mainErr.classList.remove('colC')
+      // mainErr.innerText=""
+    }, 5000);
+  }
+}
+const wtkClass = new wtkBasic()
+
 class wtkLogin {
   constructor(args) {
     this.loginForm=document.querySelector('#wtkLoginForm')

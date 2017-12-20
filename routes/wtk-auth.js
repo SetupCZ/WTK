@@ -1,11 +1,18 @@
 'use strict';
 const express = require('express');
-const serverSettings = require('../wtk/serverSettings.json');
+const path = require('path');
+const xss = require('xss');
+const multer  = require('multer')
 const wtk = require('../wtk/wtk-ctrl.js');
 const wtkIndex = require('../wtk/wtk-index.js');
-const path = require('path');
+const serverSettings = require('../wtk/serverSettings.json');
 const imgDestination = path.resolve(__dirname, serverSettings.galeryPath)
-const multer  = require('multer')
+
+const filterEverything = {
+  whitelist: [],
+  stripIgnoreTag: true,
+  stripIgnoreTagBody: ['script']
+}
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const path1=path.resolve(__dirname, serverSettings.galeryPath)
@@ -13,14 +20,20 @@ const storage = multer.diskStorage({
     cb(null, path1)
   },
   filename: function (req, file, cb) {
-    // console.log(file);
-    let fileExt=file.mimetype.split('/')
-        fileExt=fileExt[1]
-    let fileName=new Date().getTime()
+    const imgNameReg = new RegExp(/^([a-zA-Z0-9])+(\.(jpg|png|JPG|PNG))$/)
+    const imgPathReg = new RegExp(/^((?!\.\.\/).)*(\.jpg|png|json|html)$/i)
+    file.originalname = xss(file.originalname, filterEverything)
+    if (!imgNameReg.test(file.originalname)) 
+      return cb("IMG NAME is wrong!")
     cb(null, file.originalname)
   }
 })
-const upload = multer({ storage: storage })
+const upload = multer({ 
+  storage: storage, 
+  limits: { 
+    fileSize: serverSettings.uploadMaxSize
+  }
+})
 const router = express.Router();
 
 //////////////////////////
@@ -258,7 +271,8 @@ router.post('/contents/:name/items',upload.single('img'), function(req, res, nex
   let data=req.body
   let img=req.file
   let name=req.params.name
-
+  console.log(img);
+  
   if (img) return res.status(201).send({ imgContent: `${imgDestination}/${img.originalname}` })
   
   wtk.addItem(name, data, img)

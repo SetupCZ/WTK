@@ -25,7 +25,11 @@
       </div>  
       <div style="padding: 50px 50px; width:50%; border: 1px solid grey;">
         <h2>Content Meta</h2>
-        <wtk-search wtk-names="" wtk-options="wtkCont" style=""></wtk-search>
+        <wtk-search wtk-names="" wtk-options="wtkCont" style="">
+          <ul wtk-search-template>
+            <li wtk-data="wtkMetaTitle"></li>
+          </ul>
+        </wtk-search>
         <wtk-content-meta wtk-name="test02">
           <h2 wtk-data="wtkMetaTitle"></h2>
         </wtk-content-meta>
@@ -37,10 +41,15 @@
       </div>
       <div style="padding: 50px 50px; width:50%; border: 1px solid grey;">
         <h2>Groups Meta</h2>
-        <wtk-search wtk-names="test01" wtk-options="wtkMetaTitle" style="background-color: white;"></wtk-search>
+        
+        
+        <wtk-search wtk-names="test01" wtk-options="wtkMetaTitle,wtkCont" style="background-color: white;">
+        </wtk-search>
+
+
         <wtk-group-meta wtk-name="test01">
           <h2 wtk-data="wtkMetaTitle"></h2>
-          <p wtk-data="link"></p>
+          <p wtk-data="wtkMetaName"></p>
         </wtk-group-meta>
       </div>
     </div>

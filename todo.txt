@@ -1,7 +1,12 @@
 x Remove alocData:[] from alocData
 x MetaData items transform to object
+  ResetPSWD
   Replace data with https://github.com/adamreisnz/replace-in-file
-  Search
+x Search
+x add link as default attr for content
+x make link on change
+x revisit validate data
+  validate group attributes for name that already exists beginWith(wtk)
   Img css #wtk__imgItemCtrl__upload > pos: rel
         #wtk__imgItemWrapper .wtk-fileInput input[type="file"] > pos: abs
         .wtkFullScreen > z-index
@@ -17,4 +22,4 @@ x _getTinyMCEJS > getTinyMCEJS
   get set for cj
 x groupAttributes > to object
   download css and html ... add wtk function
-  on drop delete old data
+  delete old data on drop

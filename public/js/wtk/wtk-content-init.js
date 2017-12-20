@@ -209,7 +209,6 @@ class wtkContentImgItemElem extends HTMLElement {
     this._fetchItemData(this.itemHref)
   }
   setMetaData(metaData){
-    console.log(metaData)
     this.metaData=metaData
   }
   getMetaData(){
@@ -237,13 +236,18 @@ class wtkContentImgItemElem extends HTMLElement {
     const imgElm = document.createElement('img')
           imgElm.src = objectURL;
           imgElm.onload = () => {
+            // TODO: visit this
             // wouldnt show img on edit 
             // window.URL.revokeObjectURL(imgElm.src);
           }
+        if (this.imgSize) {
+          imgElm.style.width = this.imgSize.wtkWidth
+          imgElm.style.height = this.imgSize.wtkHeight
+        }
 
     wtkCont.appendChild(imgElm)
     this.appendChild(wtkCont)
-    this.setSize()
+    // this.setSize()
 
     if (!this.wtkClass.user) return 
     let wtkItemCtrlElem = document.createElement('wtk-item-ctrl')
@@ -268,6 +272,13 @@ class wtkSearchElem extends HTMLElement {
     this._searchElemInit()
   }
   async _searchElemInit(){
+    this.devSearchTemplateElem =
+      this.target.querySelector('[wtk-search-template]')
+    if (this.devSearchTemplateElem) {
+      this.wtkSearchTemplateHTML = this.devSearchTemplateElem.cloneNode(true)
+      this.devSearchTemplateElem.parentNode.removeChild(this.devSearchTemplateElem)
+    }
+
     const path = `${this.wtkClass.base}/views/search.html`
     const response = await fetch(path).catch(_ => { })
     if (!response.ok) return
@@ -283,13 +294,13 @@ class wtkSearchElem extends HTMLElement {
     this.searchInput.addEventListener('search', this._onKeyUp.bind(this))
     this.submitInput=this.target.querySelector('input[type="submit"]')
 
-    // console.log(this.wtkSearchTemplate);
-    // TODO: finish template 
-    // if (this.wtkSearchTemplate=="") {
-      this.wtkSearchTemplate = 
-        this.target.querySelector('.wtkSearchTemplate')
-      this.wtkSTHtml = this.wtkSearchTemplate.innerHTML
-    // }
+    this.wtkSearchTemplateElem = 
+      this.target.querySelector('.wtkSearchTemplate[wtk-search-template]')
+
+    console.log(this.devSearchTemplateElem);
+    if (!this.devSearchTemplateElem) {
+      this.wtkSearchTemplateHTML = this.wtkSearchTemplateElem.cloneNode(true)
+    }
       
 
     this.wtkSearchForm=this.target.querySelector('form')
@@ -311,7 +322,7 @@ class wtkSearchElem extends HTMLElement {
     const queryResponses = await Promise.all(queryPromises)
     console.log(queryResponses);
     const queryResFilteredPromise = queryResponses
-      .filter(response => { return response.ok })
+      .filter(response => { return response.ok && response.status != 204 })
       .map(response => { return response.json() })
       // .map(cjListPromise => { this._buildHint(cjListPromise) })
 
@@ -322,8 +333,8 @@ class wtkSearchElem extends HTMLElement {
     queryResFiltered.forEach(cjList => { this._buildHint(cjList) })
   }
   _dropHint(){
-    this.wtkSearchTemplate.innerHTML=""
-    this.wtkSearchTemplate.setAttribute('style',`
+    this.wtkSearchTemplateElem.innerHTML=""
+    this.wtkSearchTemplateElem.setAttribute('style',`
         opacity: 0;
         pointer-events:none;`)
   }
@@ -331,19 +342,21 @@ class wtkSearchElem extends HTMLElement {
     
     // let li=this.target.querySelector('li')
     let y = this.searchInput.getBoundingClientRect().height;
-    this.wtkSearchTemplate.setAttribute('style',`
+    this.wtkSearchTemplateElem.setAttribute('style',`
         opacity: 1;
         pointer-events:initial;
         transform:translateY(${y}px);`)
     if (!cjList) {
-      return this.wtkSearchTemplate.innerHTML="<li>Bohužel jsme nic nenašli.</li>"
+      return this.wtkSearchTemplateElem.innerHTML="<p class='wtk-warning'>Bohužel jsme nic nenašli.</p>"
     }
     cjList.forEach(cj => {
       const stHtml=document.createElement('div')
-            stHtml.innerHTML=this.wtkSTHtml
+            stHtml.innerHTML = this.wtkSearchTemplateHTML.innerHTML
+      console.log(stHtml);
           console.log(cj);
       this.wtkClass.bindDataToTemplate(cj, stHtml)
-      this.wtkSearchTemplate.innerHTML+=stHtml.innerHTML
+      console.log(stHtml.innerHTML);
+      this.wtkSearchTemplateElem.innerHTML += stHtml.innerHTML
     })
   }
   _visibleItems(items, wtkGroupName){

@@ -85,12 +85,9 @@ class wtkAlocNewContent extends HTMLElement {
     this.newContentWrapper.innerHTML = await htmlResponse.text()
 
     this.target.appendChild(this.newContentWrapper)
-    const closeAlocNewCont = 
-      this.target.querySelector('#wtk__closeAlocNewContentBtn')
-          closeAlocNewCont.addEventListener('click', this._closeAlocNewContClick.bind(this))
-    this.alocNewContForm = this.target.querySelector('form')
-    this.alocNewContForm.addEventListener('submit', this._submitAlocNewCont.bind(this))
+    
 
+    this._initForm()
     this._initAttrForCont()
     this._initThumbnail()
     this._initEditCont()
@@ -101,6 +98,25 @@ class wtkAlocNewContent extends HTMLElement {
       val.addEventListener('keyup', validateClass._onKeyUp.bind(validateClass))
       val.addEventListener('keydown', validateClass._onKeyDown.bind(validateClass))
     }
+
+  }
+  _initForm(){
+    // add event to closeBtn 
+    this.target
+      .querySelector('#wtk__closeAlocNewContentBtn')
+      .addEventListener('click', this._closeAlocNewContClick.bind(this))
+
+    this.alocNewContForm = this.target.querySelector('form')
+    this.alocNewContForm
+      .addEventListener('submit', this._submitAlocNewCont.bind(this))
+
+    // add event to metaTitle input 
+    this.formMetaTitle = 
+      this.target.querySelector('form input[name="wtkMetaTitle"]')
+    this.formMetaTitle
+      .addEventListener('keyup', this._onChangeLink.bind(this))
+    this.formMetaLink =
+      this.target.querySelector('form input[name="wtkMetaLink"]')
 
   }
   _initThumbnail(){
@@ -212,6 +228,29 @@ class wtkAlocNewContent extends HTMLElement {
                   <div class="errMsg required">Toto pole musí být vyplněno!</div>
                 </div>
               </div>`
+  }
+  _onChangeLink(evt){
+    const target = evt.target
+    const filteredValue = 
+        String(target.value)
+          .toLowerCase()
+          .replace(/á/g, "a")
+          .replace(/é/g, "e")
+          .replace(/í/g, "i")
+          .replace(/ó/g, "o")
+          .replace(/ú/g, "u")
+          .replace(/ů/g, "u")
+          .replace(/ý/g, "y")
+          .replace(/ž/g, "z")
+          .replace(/š/g, "s")
+          .replace(/č/g, "c")
+          .replace(/ř/g, "r")
+          .replace(/ď/g, "d")
+          .replace(/ť/g, "t")
+          .replace(/ň/g, "n")
+          .replace(/ě/g, "e")
+          .replace(/ /g, "_")
+    this.formMetaLink.value = filteredValue
   }
   _handleImage(evt) {
     let reader = new FileReader();

@@ -33,6 +33,7 @@ function returnAlocDataByName(alocData, name, resolve) {
   //   return val.wtkName==name
   // })
 }
+
 module.exports={
   sendMail:function(body){
     return new Promise((resolve, reject) => {
@@ -196,7 +197,7 @@ module.exports={
       return item.href==wtkPath
     })
   },
-  getTextItemByID(wtkDir, wtkID){
+  getTextItemByID:function(wtkDir, wtkID){
     return new Promise((resolve, reject) => {
       var filePath=path.resolve(__dirname, 'yourContent', wtkDir, wtkID+'.html');
       var data = fs.readFile(filePath, {encoding: 'utf8'}, function (err, data) {
@@ -205,7 +206,7 @@ module.exports={
       });
     });
   },
-  getImgItemByName(wtkCont){
+  getImgItemByName:function(wtkCont){
     return new Promise((resolve, reject) => {
       var filePath=path.resolve(__dirname, settings.galeryPath, wtkCont);
       var data = fs.readFile(filePath, function (err, data) {
@@ -214,14 +215,14 @@ module.exports={
       });
     });
   },
-  getVisibleItems(metaData){
+  getVisibleItems:function(metaData){
     const items = metaData._embedded.items
     return Object.keys(items).map(key => { 
       if (items[key].wtkVisible) return items[key]
     })
   },
   // TODO: sort object
-  sortItemsData(metaData){
+  sortItemsData:function(metaData){
     return metaData._embedded.items.sort((itemA, itemB) => {
       return itemA.wtkPosition - itemB.wtkPosition
     })
@@ -398,56 +399,43 @@ module.exports={
       const imgPathReg = pathGlobalReg
 
       // data
-      const dataReg={
-        wtkType:{
-          reg:new RegExp(/^(text|img)$/),
-          msg:"WTK TYPE is wrong!"
-        },
-        wtkPosition:{
-          reg:new RegExp(/^([0-9])+$/),
-          msg:"WTK POSITION is wrong!"
-        },
-        wtkWidth:{
-          reg:new RegExp(/^(([0-9])+( )?(px|%|vw|vh)|(auto|none|initial|inherit))$/),
-          msg:"WTK WIDTH is wrong!"
-        },
-        wtkHeight:{
-          reg:new RegExp(/^(([0-9])+( )?(px|%|vw|vh)|(auto|none|initial|inherit))$/),
-          msg:"WTK HEIGHT is wrong!"
-        },
-        wtkCont:{
-          reg:imgNameReg,
-          msg:"WTK HEIGHT is wrong!"
-        },
-      }
+      wtkTypeReg = new RegExp(/^(text|img)$/),
+      wtkPositionReg = new RegExp(/^([0-9])+$/),
+      wtkWidthReg = new RegExp(/^(([0-9])+( )?(px|%|vw|vh)|(auto|none|initial|inherit))$/),
+      wtkHeightReg = new RegExp(/^(([0-9])+( )?(px|%|vw|vh)|(auto|none|initial|inherit))$/),
+      wtkContReg = imgNameReg,
+
+      data.wtkType = xss(data.wtkType, filterEverything)
+      data.wtkPosition = xss(data.wtkPosition, filterEverything)
+      data.wtkWidth = xss(data.wtkWidth, filterEverything)
+      data.wtkHeight = xss(data.wtkHeight, filterEverything)
+      data.wtkCont = xss(data.wtkCont)
+
+      if (!wtkTypeReg.test(data.wtkType))
+        return reject("ITEM TYPE is wrong!")
+      if (!wtkPositionReg.test(data.wtkPosition))
+        return reject("ITEM POSITION is wrong!")
+      if (!wtkWidthReg.test(data.wtkWidth))
+        return reject("ITEM WIDTH is wrong!")
+      if (!wtkHeightReg.test(data.wtkHeight))
+        return reject("ITEM HEIGHT is wrong!")
+
+      if (!wtkContReg.test(data.wtkCont && data.type=="img"))
+        return reject("ITEM NAME is wrong!")
 
       return resolve(data)
-      // TODO: edit for object 
-      let type=data.find((data) => {
-        return data.name=="wtkType"
-      }).value
-
-      for (let val of data) {
-        console.log('***********')
-          console.log(val)
-        if (val.name=="wtkCont") { val.value=xss(val.value) }
-        else{ val.value = xss(val.value, filterEverything) }
-
-        if (val.name=="wtkCont" && type=="text") { continue }
-
-        if (!dataReg[val.name].reg.test(val.value)) { return reject(dataReg[val.name].msg) }
-      }
-      console.log('all good')
-
-
+      
       // test img
       if (img) {
         img.originalname = xss(img.originalname, filterEverything)
         img.path = xss(img.path, filterEverything)
 
-        if ( !imgNameReg.test(img.originalname) ) return reject("IMG NAME is wrong!")
-        if ( !imgPathReg.test(img.path) ) return reject("IMG PATH is wrong!")
-        if ( img.size > settings.uploadMaxSize ) return reject("IMG SIZE is too big!")
+        if ( !imgNameReg.test(img.originalname) ) 
+          return reject("IMG NAME is wrong!")
+        if ( !imgPathReg.test(img.path) ) 
+          return reject("IMG PATH is wrong!")
+        if ( img.size > settings.uploadMaxSize ) 
+          return reject("IMG SIZE is too big!")
       }
 
       return resolve(data)
@@ -487,6 +475,7 @@ module.exports={
       // console.log(img)
       const wtkNameReg = nameGlobalReg
       const wtkMetaTitleReg = textGlobalReg
+      const wtkMetaLinkReg = nameGlobalReg
       const wtkMetaAuthorReg = textGlobalReg
       const wtkMetaDescriptionReg = textGlobalReg
       const wtkMetaUrlReg = urlGlobalReg
@@ -512,66 +501,86 @@ module.exports={
       data.wtkMetaTwitterSite = xss(data.wtkMetaTwitterSite, filterEverything)
       data.wtkMetaThumbnail = xss(data.wtkMetaThumbnail, filterEverything)
 
-      if ( !wtkNameReg.test(data.wtkMetaName) ) return reject("WTK NAME is wrong!")
-      if ( !wtkMetaTitleReg.test(data.wtkMetaTitle) ) return reject("Content TITLE is wrong!")
-      if ( !wtkMetaAuthorReg.test(data.wtkMetaAuthor) ) return reject("Content AUTHOR is wrong!")
-      if ( !wtkMetaDescriptionReg.test(data.wtkMetaDescription) ) return reject("Content DESCRIPTION is wrong!")
-      if ( !wtkMetaUrlReg.test(data.wtkMetaUrl) ) return reject("Content URL is wrong!")
-      if ( data.wtkMetaOgLocale!="" && !wtkMetaOgLocaleReg.test(data.wtkMetaOgLocale) ) return reject("Content og:LOCALE is wrong!")
-      if ( data.wtkMetaOgSitename != "" && !wtkMetaOgSitenameReg.test(data.wtkMetaOgSitename) ) return reject("Content og:SITE NAME is wrong!")
-      if ( data.wtkMetaTwitterSite != "" && !wtkMetaTwitterSiteReg.test(data.wtkMetaTwitterSite) ) return reject("Content twitter:SITE is wrong!")
-      if ( data.wtkMetaThumbnail != "" && !wtkMetaThumbnailReg.test(data.wtkMetaThumbnail)) return reject("Content twitter:SITE is wrong!")
+      if ( !wtkNameReg.test(data.wtkMetaName) ) 
+        return reject("WTK NAME is wrong!")
+      if ( !wtkMetaTitleReg.test(data.wtkMetaTitle) ) 
+        return reject("Content TITLE is wrong!")
+      if (!wtkMetaLinkReg.test(data.wtkMetaLink))
+        return reject("Content TITLE is wrong!")
+      if ( !wtkMetaAuthorReg.test(data.wtkMetaAuthor) ) 
+        return reject("Content AUTHOR is wrong!")
+      if ( !wtkMetaDescriptionReg.test(data.wtkMetaDescription) ) 
+        return reject("Content DESCRIPTION is wrong!")
+      if ( !wtkMetaUrlReg.test(data.wtkMetaUrl) ) 
+        return reject("Content URL is wrong!")
+      if ( data.wtkMetaOgLocale!="" 
+          && !wtkMetaOgLocaleReg.test(data.wtkMetaOgLocale) ) 
+        return reject("Content og:LOCALE is wrong!")
+      if ( data.wtkMetaOgSitename != "" 
+          && !wtkMetaOgSitenameReg.test(data.wtkMetaOgSitename) ) 
+        return reject("Content og:SITE NAME is wrong!")
+      if ( data.wtkMetaTwitterSite != "" 
+          && !wtkMetaTwitterSiteReg.test(data.wtkMetaTwitterSite) ) 
+        return reject("Content twitter:SITE is wrong!")
+      if ( data.wtkMetaThumbnail != "" 
+          && !wtkMetaThumbnailReg.test(data.wtkMetaThumbnail)) 
+        return reject("Content twitter:SITE is wrong!")
 
       // test img
       if (img){
         img.originalname = xss(img.originalname, filterEverything)
         img.path = xss(img.path, filterEverything)
         
-        if ( !imgNameReg.test(img.originalname) ) return reject("IMG NAME is wrong!")
-        if ( !imgPathReg.test(img.path) ) return reject("IMG PATH is wrong!")
-        if ( img.size > settings.uploadMaxSize ) return reject("IMG SIZE is too big!")
+        if ( !imgNameReg.test(img.originalname) ) 
+          return reject("IMG NAME is wrong!")
+        if ( !imgPathReg.test(img.path) ) 
+          return reject("IMG PATH is wrong!")
+        if ( img.size > settings.uploadMaxSize ) 
+          return reject("IMG SIZE is too big!")
       }
         
         
       
       // TODO: revisit
-      let groupName=data.wtkMetaName.split('/contents/')[0] 
+      const groupName = data.wtkMetaName.split('/contents/')[0] 
       if (data.groupAttrs) {
-        return resolve(data)
+        // return resolve(data)
         this.getAlocDataByName(groupName)
         .then((alocData) => {
           return this.getMetaDataByDir(alocData.wtkDir)
         })
         .then((metaData) => {
-          data.groupAttrs.forEach((valAttr, keyAttr) => {
-            valAttr.wtkMetaName=xss(valAttr.wtkMetaName, filterEverything)
-            valAttr.wtkMetaValue=xss(valAttr.wtkMetaValue, filterEverything)
-            valAttr.wtkMetaAttr=xss(valAttr.wtkMetaAttr, filterEverything)
-            valAttr.wtkMetaAttrName=xss(valAttr.wtkMetaAttrName, filterEverything)
+          const attrs = data.groupAttrs
+          Object.keys(attrs).forEach(key => {
+            attrs[key].wtkMetaName = 
+              xss(attrs[key].wtkMetaName, filterEverything)
+            attrs[key].wtkMetaValue = 
+              xss(attrs[key].wtkMetaValue, filterEverything)
+            attrs[key].wtkMetaAttr = 
+              xss(attrs[key].wtkMetaAttr, filterEverything)
+            attrs[key].wtkMetaAttrName = 
+              xss(attrs[key].wtkMetaAttrName, filterEverything)
 
-            // let attrMeta = metaData.collection.items.find((item) => {
-            //   return item.href==`${valAttr.wtkMetaName}/`
-            // }).data
-            // let attrMetaTitle = attrMeta.find((dataItem) => {
-            //   return dataItem.name=="wtkAttrLabel"
-            // }).value
-            // let attrMetaRegEx = attrMeta.find((dataItem) => {
-            //   return dataItem.name=="wtkAttrRegex"
-            // }).value
-            // let attrMetaReq = attrMeta.find((dataItem) => {
-            //   return dataItem.name=="wtkAttrReq"
-            // }).value
+            const metaAttr = metaData.groupAttributes[key]
 
+            if ( !wtkAttrTypeReg.test(attrs[key].wtkMetaAttr) ) 
+              return reject("Attribute TYPE is wrong!")
+            if ( !wtkAttrNameReg.test(attrs[key].wtkMetaName) ) 
+              return reject("Attribute NAME is wrong!")
 
-            if ( !wtkAttrTypeReg.test(valAttr.wtkMetaAttr) ) return reject("Attribute TYPE is wrong!")
-            if ( !wtkAttrNameReg.test(valAttr.wtkMetaName) ) return reject("Attribute NAME is wrong!")
-
-            // valAttr.wtkMetaName=xss(valAttr.wtkMetaName, filterEverything)
+            // attrs[key].wtkMetaName=xss(attrs[key].wtkMetaName, filterEverything)
               
-            let attrValueReg = new RegExp(attrMetaRegEx)
-            if (attrMetaReq=="required" && valAttr.wtkMetaValue=="") return reject("All required values must be filled!")
-            if (attrMetaReq=="required" && valAttr.wtkMetaValue!="" && !attrValueReg.test(valAttr.wtkMetaValue)) return reject(`Attribute ${attrMetaTitle} is wrong!`)
-            if (attrMetaReq=="required" && data[valAttr.wtkMetaName]!="" && !attrValueReg.test(data[valAttr.wtkMetaName])) return reject(`Attribute ${attrMetaTitle} is wrong!`)
+            const attrValueReg = new RegExp(metaAttr.wtkAttrRegEx)
+
+            if (metaAttr.wtkAttrReq=="required" && attrs[key].wtkMetaValue=="") 
+              return reject("All required values must be filled!")
+            if (metaAttr.wtkAttrReq=="required" && attrs[key].wtkMetaValue!="" 
+                && !attrValueReg.test(attrs[key].wtkMetaValue)) 
+              return reject(`Attribute ${metaAttr.wtkAttrLabel} is wrong!`)
+            if (metaAttr.wtkAttrReq=="required" 
+                && data[attrs[key].wtkMetaName]!="" 
+                && !attrValueReg.test(data[attrs[key].wtkMetaName])) 
+              return reject(`Attribute ${metaAttr.wtkAttrLabel} is wrong!`)
           })
           console.log('validateC ok');
           return resolve(data)
@@ -582,8 +591,6 @@ module.exports={
         });
       }
       return resolve(data)
-
-
     });
   },
   validateG:function(data){
@@ -615,7 +622,8 @@ module.exports={
       const wtkAttrReqReg = new RegExp(/^(required)*$/)
 
       // test wtkName
-      if ( !wtkNameReg.test(data.wtkName) ) return reject("Group NAME is wrong!")
+      if ( !wtkNameReg.test(data.wtkName) ) 
+        return reject("Group NAME is wrong!")
       data.wtkName=xss(data.wtkName, filterEverything)
 
       // test groupAttrs
@@ -629,11 +637,16 @@ module.exports={
         attrs[val].wtkAttrRegEx=xss(attrs[val].wtkAttrRegEx, filterEverything)
         attrs[val].wtkAttrReq=xss(attrs[val].wtkAttrReq, filterEverything)
 
-        if ( !wtkAttrTypeReg.test(attrs[val].wtkAttrType) ) return reject("Attribute TYPE is wrong!")
-        if ( !wtkAttrNameReg.test(attrs[val].wtkAttrName) ) return reject("Attribute NAME is wrong!")
-        if ( !wtkAttrLabelReg.test(attrs[val].wtkAttrLabel) ) return reject("Attribute LABEL is wrong!")
-        if ( !wtkAttrRegExReg.test(attrs[val].wtkAttrRegEx) ) return reject("Attribute REGEXP is wrong!")
-        if ( !wtkAttrReqReg.test(attrs[val].wtkAttrReq) ) return reject("Attribute REQUIRED is wrong!")
+        if ( !wtkAttrTypeReg.test(attrs[val].wtkAttrType) ) 
+          return reject("Attribute TYPE is wrong!")
+        if ( !wtkAttrNameReg.test(attrs[val].wtkAttrName) ) 
+          return reject("Attribute NAME is wrong!")
+        if ( !wtkAttrLabelReg.test(attrs[val].wtkAttrLabel) ) 
+          return reject("Attribute LABEL is wrong!")
+        if ( !wtkAttrRegExReg.test(attrs[val].wtkAttrRegEx) ) 
+          return reject("Attribute REGEXP is wrong!")
+        if ( !wtkAttrReqReg.test(attrs[val].wtkAttrReq) ) 
+          return reject("Attribute REQUIRED is wrong!")
       })
 
       return resolve(data)

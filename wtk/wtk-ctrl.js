@@ -424,12 +424,17 @@ module.exports={
   },
   getContentsMetaData: function (vData) {
     return {
+      // metaAttr doesn't apply
+      "wtkMetaLink": {
+        wtkMetaValue: vData.wtkMetaLink, wtkMetaAttr: "id", wtkMetaAttrName: "name"
+      },
       "wtkMetaName": {
         wtkMetaValue: vData.wtkMetaName, wtkMetaAttr: "id", wtkMetaAttrName: "name"
       },
       "wtkMetaTitle": {
         wtkMetaValue: vData.wtkMetaTitle, wtkMetaAttr: "id", wtkMetaAttrName: "name"
       },
+      // metaAttr apply
       "wtkMetaDescription": {
         wtkMetaValue: vData.wtkMetaDescription, wtkMetaAttr: "type", wtkMetaAttrName: "name"
       },
@@ -439,7 +444,7 @@ module.exports={
       "wtkMetaThumbnail": {
         wtkMetaValue: vData.wtkMetaThumbnail, wtkMetaAttr: "content", wtkMetaAttrName: "name"
       },
-
+      // FB, TWIITER META
       "wtkMetaOgUrl": {
         wtkMetaValue: vData.wtkMetaUrl, wtkMetaAttr: "og:url", wtkMetaAttrName: "name"
       },
@@ -708,7 +713,6 @@ module.exports={
       })
       .then((itemsData) => {
         itemHref = `${wtkName}/items/${wtkID}`
-        console.log(`${JSON.stringify(itemsData._embedded)}`);
         let item = itemsData._embedded.items[itemHref]
         
         if (item.wtkType=="text") {
@@ -976,33 +980,21 @@ module.exports={
 
   searchQuery: function (wtkName, query, options){
     return new Promise((resolve, reject) => {
-      let wtkTypeCont=true
-      let cj={}
-      console.log(wtkName);
+      let wtkTypeCont
       wtkIndex.getAlocDataByName(wtkName)
       .then((alocData) => {
-        console.log(alocData)
-
-        if (alocData.wtkType=="content") {
-          return wtkIndex.getMetaDataByDir(alocData.wtkDir)
-        }
-        else{
-          wtkTypeCont=false
-          return wtkIndex.getMetaDataByDir(alocData.wtkDir)
-        }
+        wtkTypeCont = alocData.wtkType
+        return wtkIndex.getMetaDataByDir(alocData.wtkDir)
       })
       .then((metaData) => {
-        cj=metaData
-        if (wtkTypeCont) {
-          return searchContent(metaData)
+        if (wtkTypeCont=="content") {
+          return searchContent(metaData, options, query)
         }
         else {
-          return searchGroup(metaData)
+          return searchGroup(metaData, options, query)
         }
       })
       .then((pushThis) => {
-        // cj.collection.items=pushThis
-        console.log('pushThis', pushThis)
         return resolve(pushThis)
       })
       .catch((err) => {
@@ -1010,207 +1002,72 @@ module.exports={
         return reject(err)
       });
     });
-    function searchGroup(metaDataGroup){
+
+    function searchGroup(metaDataGroup, options, query){
       return new Promise((resolve, reject) => {
-        // let searchedItems=[]
-        let searchAll=[]
-        let searchAllCont=[]
         const items = metaDataGroup._embedded.items
-        console.log(items);
-        Object.keys(items)
-        .forEach(key => {
-          console.log(items[key]._links.self.href);
-          // Push promise for each item
-          searchAll.push(new Promise((resolve, reject) => {
-            wtkIndex.getAlocDataByName(items[key]._links.self.href)
-            .then((alocData) => {
-              return wtkIndex.getMetaDataByDir(alocData.wtkDir)
-            })
-            .then((metaData) => {
-              return searchContent(metaData)
-            })
-            .then((data) => {
-              // console.log('data<-', data)
-              // console.log('data<-', data)
-              return resolve(data)
-            })
-            .catch((err) => {
-              console.log('errg',err)
-
-              return reject(err)
-            });
-          })) // search all
-          // console.log('end each')
-        }) // each items
-
+        const searchAll = 
+          Object.keys(items)
+          .map(key => {
+            // Push promise for each item
+            return new Promise((resolve, reject) => {
+              wtkIndex.getAlocDataByName(items[key]._links.self.href)
+              .then((alocData) => {
+                return wtkIndex.getMetaDataByDir(alocData.wtkDir)
+              })
+              .then((metaData) => {
+                return resolve(searchContent(metaData, options, query))
+              })
+              .catch((err) => {
+                console.log('errg',err)
+                return reject(err)
+              });
+            }) // search all
+          }) // map items
 
         return Promise.all(searchAll)
         .then((searchedItems) => {
-          console.log('cont')
-          // console.log(searchedItems)
-          // Gets rid of null in array
-          while (searchedItems.indexOf(null) !== -1) {  
-            searchedItems.splice(searchedItems.indexOf(null),1)
-          }
-          if (searchedItems.length==0) { return resolve(null)}
-          console.log(searchedItems.length);
-          return resolve([].concat.apply([], searchedItems))
-          // return resolve(searchedItems)
+          return resolve(
+            searchedItems
+            .filter(data => { return data.length })
+            .reduce((first, second) => { return first.concat(second) })
+          )
         })
         .catch((err) => {
           return reject(err)
         });
       }); //promise
     }
-    function searchContent(metaData){
-      return new Promise((resolve, reject) => {
-        let searchedItems=[]
-        let found=false
-        let searchAll=[]
-        // console.log(metaData)
-        options.forEach((val, key) => {
-          if (val=="wtkCont") {
-            searchAll.push(searchContentItems(metaData._links.self.href, val, metaData))  
-          }
-          else{
-            searchAll.push(searchContentMeta(metaData, val))
-          }
+    function searchContent(metaData, options, query){
+      return options
+        .map(valOpt => { 
+          return searchContentMeta(metaData, valOpt, query) 
         })
-        return Promise.all(searchAll)
-        .then((searchedItems) => {
-          // console.log('searchedItems',searchedItems)
-          // Gets rid of null in array
-          while (searchedItems.indexOf(null) !== -1) {  
-            searchedItems.splice(searchedItems.indexOf(null),1)
-          }
-          console.log('searchedItems',typeof searchedItems)
-          searchedItems=[].concat.apply([], searchedItems)
-          // console.log('searchedItems ------')
-          // console.log(searchedItems)
-          if (searchedItems.length==0) { return resolve(null)}
-          return resolve([searchedItems[0]])
-
-        })
-        .catch((err) => {
-          console.log('errc',err)
-          return reject(err)
-        });
-
-
-      //   metaData.collection.items.find((val, key) => {
-      //     options.forEach((valOpt, keyOpt) => {
-      //       // console.log(val.href)
-      //       // console.log(val.data)
-
-      //       if (val.href.replace('/','')==valOpt) {
-      //         if (found) { return }
-      //         if (val.data[2].value.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
-      //           found=true
-      //           return searchedItems.push(metaData)
-      //         }
-      //       }
-      //     })
-      //   })
-      //   return resolve(searchedItems)
-
-      });
-    }
-    
-    function searchContentMeta(metaData, valOpt){
-      return new Promise((resolve, reject) => {
-        console.log('--------------------------')
-        console.log('--------------------------')
-        // console.log(metaData)
-        console.log(valOpt)
-        if (!metaData[valOpt]) return resolve(null)
-        if (String(metaData[valOpt].wtkMetaValue)
-            .toLowerCase()
-            .indexOf(String(query).toLowerCase()) !== -1) {
-          console.log(metaData[valOpt].wtkMetaValue);
-          console.log(query);
-          return resolve(metaData)//[valOpt].wtkMetaValue)
-        }
-        return resolve(null)
-
-        
-        let item=metaData.collection.items.find((val, key) => {
-          // console.log('///////////////////////')
-          // console.log(val)
-          // console.log(val.data[2].value)
-          // console.log(query)
-          // // console.log(String(val.data[2].value).toLowerCase())
-          // console.log(String(val.data[2].value).toLowerCase().indexOf(String(query).toLowerCase()))
-          if (val.href==valOpt+'/' && String(val.data[2].value).toLowerCase().indexOf(String(query).toLowerCase()) !== -1) {
-        // console.log('--------------------------')
-            // console.log('this')
-            return true
-          }
-        });
-        // console.log('___---___')
-        // console.log(item)
-        if (item==undefined ) { return resolve(null) }
-          let wtkMetaName=metaData.collection.href.split('/')
-        metaData.collection.items.push({
-          href:"wtkGroupName/",
-          data:[
-            {name: "wtkMetaAttr", value: "wtkGroupName", prompt: ""},
-            {name: "wtkMetaAttrName", value: "wtkGroupName", prompt: "name"},
-            {name: "wtkMetaValue", value: wtkMetaName[0], prompt: "value"}
-          ]
-        })
-        return resolve(metaData)
-      });
-    }
-    function searchContentItems(href, valOpt, metaData){
-      return new Promise((resolve, reject) => {
-        // href=href.split('/')
-        // console.log(href[href.length-1])
-        console.log('href',href)
-        wtkIndex.getAlocDataByName(href)
-        .then((alocData) => {
-          // console.log('alocData')
-          // console.log(alocData)
-          return wtkIndex.getItemsDataByDir(alocData.wtkDir)
-        })
-        .then((itemsData) => {
-          // console.log('itemsData')
-          // console.log(itemsData)
-          let l=itemsData.collection.items.find((val) => {
-            // console.log('val',val)
-            let dataItem=val.data.find((data) => {
-              return data.name=="wtkCont"
-            }).value
-            // console.log('dataItem',dataItem)
-            return String(dataItem).toLowerCase().indexOf(String(query).toLowerCase()) !== -1
+        .filter(data => { return data })
+    } 
+    function searchContentMeta(metaData, valOpt, query){
+      // data can be hal metadata or hal _embedded.items
+      if (valOpt=="wtkCont") {
+        const items = metaData._embedded.items
+        const itemMetaData = 
+          Object.keys(items)
+          .find(key => {
+            if (String(items[key].wtkCont)
+                .toLowerCase()
+                .indexOf(String(query).toLowerCase()) !== -1) {
+              return true
+            }
           })
-          // console.log('l',l)
-          return l
-          // return searchContentMeta(itemsData, valOpt)
-        })
-        .then((data) => {
-          // console.log('data')
-          // console.log(data)
-          // let d=data.data.find((data) => {
-          //   return data.name=="wtkCont"
-          // })
-          // d.name="wtkMetaCont"
-
-          /*metaData.collection.items.push({
-            href:"wtkCont/",
-            data:[{name:"wtkMetaValue", value:d.value}]
-          })*/
-          // console.log('metaData',metaData.collection.items)
-          if (data==undefined) { return resolve(null) }
-          return resolve(metaData)
-        })
-        .catch((err) => {
-          console.log('erri',err)
-          return reject(err)
-        });
-      });
+        return itemMetaData ? metaData : null
+      }
+      if (!metaData[valOpt]) return null
+      if (String(metaData[valOpt].wtkMetaValue)
+          .toLowerCase()
+          .indexOf(String(query).toLowerCase()) !== -1) {
+        return metaData 
+      }
+      return null
     }
-   
-    
   }
 }
 

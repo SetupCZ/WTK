@@ -234,9 +234,10 @@ class wtkNewTextItem extends HTMLElement {
         location, this.wtkContent, 
         this.wtkContent.lastChild, 'text')
     }
-    await this.wtkContent.updateCJ(
+    await this.wtkClass.updateCJ(
       groupPath, 
-      this.wtkContent.wtkName)
+      this.wtkContent.wtkName, 
+      this.wtkContent)
   }
   _closeClick(evt){
     // evt.preventDefault()
@@ -417,7 +418,7 @@ class wtkNewImgItem extends HTMLElement {
     if (imgInfo.name != metaWtkCont && imgInfo.name != "") {
       const response = await fetch(path, {
         method: method,
-        body: imgInfo,
+        body: imgForm,
         credentials :'same-origin'
       }).catch(_ => {})
       if (!response.ok) return this.wtkClass.toast(response.statusText)
@@ -444,7 +445,7 @@ class wtkNewImgItem extends HTMLElement {
       this.wtkClass.addContentItem(location, this.wtkContent, this.wtkContent.lastChild, 'img')
     }
     this._closeClick()
-    this.wtkContent.updateCJ(groupPath, this.wtkContent.wtkName)
+    this.wtkClass.updateCJ(groupPath, this.wtkContent.wtkName, this.wtkContent)
   }
   _closeClick(evt){
     // evt.preventDefault()
@@ -609,7 +610,7 @@ class wtkItemCtrl extends HTMLElement {
     const items = cj._embedded.items
     Object.keys(items)
     .sort((valA, valB) => {
-      return items[valA].wtkPosition < items[valB].wtkPosition
+      return items[valA].wtkPosition > items[valB].wtkPosition
     })
     .find((val, key, list) => {
       if (items[val].wtkVisible && 
@@ -618,17 +619,11 @@ class wtkItemCtrl extends HTMLElement {
       }
       return items[val]._links.self.href == this.wtkItemHref
     })
-    console.log(prevItem)
-    console.log(item)
-    console.log(prevItem.href==item.href)
-
     if (prevItem._links.self.href == item._links.self.href) { return }
     let prevItemPosition=prevItem.wtkPosition
     let itemPosition=item.wtkPosition
     let itemType=item.wtkType
     
-    console.log('prevItemPosition',prevItemPosition)
-    console.log('itemPosition',itemPosition)
     
     const prevItemBody = {
       wtkPosition:prevItemPosition
@@ -667,9 +662,9 @@ class wtkItemCtrl extends HTMLElement {
     if (!prevItemResponse.ok) return this.wtkClass.toast(prevItemResponse.statusText)
     let { prevItemLocation } = await prevItemResponse.json()
 
-    this.wtkContent.updateCJ(
+    this.wtkClass.updateCJ(
       this.groupName == null ? 'contents' : 'groups',
-      this.wtkContent.wtkName)
+      this.wtkContent.wtkName, this.wtkContent)
 
     this.wtkClass.addContentItem(
       location,
@@ -683,7 +678,6 @@ class wtkItemCtrl extends HTMLElement {
   }
   async _itemDownClick(evt){
     evt.preventDefault()
-    console.log(`${this.wtkItemHref}`);
     const item = this.wtkContent.getItemByID(this.wtkItemHref)
     const cj = this.wtkContent.getCJ()
     
@@ -692,7 +686,7 @@ class wtkItemCtrl extends HTMLElement {
     const items = cj._embedded.items
     Object.keys(items)
     .sort((valA, valB) => {
-      return items[valA].wtkPosition < items[valB].wtkPosition
+      return items[valA].wtkPosition > items[valB].wtkPosition
     })
     .find((val, key, list) => {
       nextItem = items[list[key+1]]
@@ -712,7 +706,6 @@ class wtkItemCtrl extends HTMLElement {
     const itemBody = {
       "wtkPosition": itemPosition
     }
-    console.log(this.wtkItemELem.nextSibling)
     // return
     const itemPath = this.groupName==null ? 
       `${this.wtkClass.api}/contents/${item._links.self.href}` :
@@ -741,9 +734,9 @@ class wtkItemCtrl extends HTMLElement {
     if (!nextItemResponse.ok) return this.wtkClass.toast(nextItemResponse.statusText)
     let { nextItemLocation } = await nextItemResponse.json()
 
-    this.wtkContent.updateCJ(
+    this.wtkClass.updateCJ(
       this.groupName == null ? 'contents' : 'groups',
-      this.wtkContent.wtkName)
+      this.wtkContent.wtkName, this.wtkContent)
     
     this.wtkClass.addContentItem(
       location, 

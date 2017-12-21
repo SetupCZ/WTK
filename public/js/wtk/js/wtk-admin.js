@@ -52,6 +52,11 @@ class wtkAdmin {
     this.changePswdBtn
       .addEventListener('click', this._showPswdForm.bind(this))
 
+    this.logOutBtn = 
+      this.target.querySelector('#wtk-admin-logout')
+    this.logOutBtn
+      .addEventListener('click', this._logOut.bind(this))
+
     this.userPswdFormWrapper = 
       this.target.querySelector('#userPswdFormWrapper')
     this.userPswdForm = 
@@ -107,6 +112,20 @@ class wtkAdmin {
   }
   _showAdmin(evt){
     this.adminMainElem.classList.toggle('showAdmin')
+  }
+  async _logOut(evt){
+    evt.preventDefault()
+    const logOutHeaders = new Headers()
+          logOutHeaders.append('Content-Type', "Application/json")
+    const path = `${this.wtkClass.api}/logout`
+    const response = await fetch(path, {
+      method:"POST",
+      headers: logOutHeaders,
+      credentials: 'same-origin'
+    }).catch(_ => {})
+    if (!response.ok) return this.wtkClass.toast(response.statusText) 
+
+    window.location.href = "/"
   }
   async _saveUserInfo(evt) {
     evt.preventDefault()

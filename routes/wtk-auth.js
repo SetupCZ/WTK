@@ -51,6 +51,19 @@ router.put('/user', function(req, res, next) {
     return res.status(400).send(err)
   });
 });
+router.post('/logout', (req, res, next) => {
+  console.log('logout');
+  const user = req.user
+  wtk.logoutUser(user, res)
+  .then((data) => {
+    console.log(req.cookies.Authorization);
+
+    return res.status(200).send()
+  })
+  .catch((err) => {
+    return res.status(400).send(err)
+  })
+})
 
 //////////////////////////
 // groups

@@ -1,6 +1,8 @@
 x Remove alocData:[] from alocData
 x MetaData items transform to object
   ResetPSWD
+  render ejs change to send html from wtk views
+  figure out paths
   Replace data with https://github.com/adamreisnz/replace-in-file
 x Search
 x add link as default attr for content

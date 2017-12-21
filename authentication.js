@@ -77,9 +77,9 @@ exports.getTokens = (req) => {
 }
 exports.setTokens = async (accessToken, refreshToken, userId, res) => {
   console.log('inSetTokens');
-  res.cookie('Authorization', `Bearer ${accessToken}`, { httpOnly: true }) //secure:true > uses https
-  res.cookie('accessToken', `${accessToken}`, { httpOnly: true })
-  res.cookie('refreshToken', `${refreshToken}`, { httpOnly: true })
+  res.cookie('Authorization', `Bearer ${accessToken}`, { httpOnly: true, path:'/' }) //secure:true > uses https
+  res.cookie('accessToken', `${accessToken}`, { httpOnly: true, path:'/' })
+  res.cookie('refreshToken', `${refreshToken}`, { httpOnly: true, path:'/' })
   res.cookie('userForWeb', `${userId}`, { })
   // save user
   const user = await this.getUser(userId)
@@ -93,4 +93,13 @@ exports.getUser = async (id) => {
 }
 exports.setUser = async (id, userData) => {
   userSettings[id]=userData
+}
+exports.logout = (res) => {
+  console.log('inLogOut');
+  res.clearCookie('Authorization', {path:'/'})
+  res.clearCookie('accessToken', {path:'/'})
+  res.clearCookie('refreshToken', {path:'/'})
+  res.clearCookie('userForWeb', {path:'/'})
+  console.log('clear');
+  return
 }

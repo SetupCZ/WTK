@@ -1,5 +1,6 @@
 'use strict';
 const express = require('express');
+const path = require('path');
 const expressJwt=require('express-jwt');
 const jwt=require('jsonwebtoken');
 const CryptoJS = require("crypto-js")
@@ -13,11 +14,14 @@ const router = express.Router();
 
 
 router.get('/wtk-login', function(req, res, next) {
-  res.render('wtk-login', { title: 'WTK login' });
+  res.render('wtk-login', { title: 'WTK Login' });
 });
 router.get('/wtk-admin', function(req, res, next) {
-  res.render('wtk-admin', { title: 'WTK admin' });
+  res.render('wtk-admin', { title: 'WTK Admin' });
 });
+router.get('/wtk-reset-password', (req, res, next) => {
+  res.sendFile(path.resolve(__dirname, serverSettings.viewsPath,'wtk-reset-password.html'))
+})
 // TODO: pritiffy
 router.post('/wtk-login', async function(req, res, next) {
   let data=req.body;
@@ -64,7 +68,38 @@ router.post('/wtk-login', async function(req, res, next) {
 });
 // TODO: make this
 router.post('/wtk-forgotPswd', function(req, res, next) {
-
+  const data = req.body
+  wtk.forgotPswd(data)
+  .then((data) => {
+    return res.status(200).send(data)
+  })
+  .catch((err) => {
+    if (err == null) { return res.status(204).send(data) }
+    return res.status(400).send(err)
+  });
+});
+router.post('/wtk-resetPswd', function (req, res, next) {
+  const data = req.body
+  wtk.resetPswd(data)
+  .then((data) => {
+    return res.status(200).send(data)
+  })
+  .catch((err) => {
+    if (err == null) { return res.status(204).send(data) }
+    return res.status(400).send(err)
+  });
+});
+router.post('/wtk-newPswd', function (req, res, next) {
+  const data = req.body
+  console.log(res);
+  wtk.newPswd(data, res)
+  .then((data) => {
+    return res.status(200).send()
+  })
+  .catch((err) => {
+    if (err == null) { return res.status(204).send(data) }
+    return res.status(400).send(err)
+  });
 });
 
 // TODO: remove i gues

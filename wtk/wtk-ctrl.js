@@ -1,6 +1,8 @@
 'use strict';
 const wtkIndex = require('../wtk/wtk-index.js');
 const settings = require('./serverSettings.json');
+const { generateTokens, setTokens, getUser, logout } = require('../authentication');
+
 // const userSettings = require('./userSettings.json');
 
 const CryptoJS = require("crypto-js")
@@ -8,7 +10,7 @@ const jwt=require('jsonwebtoken');
 
 module.exports={
   // TODO: pswds
-  newPswd:function(formData){
+  /*newPswd:function(formData){
     return new Promise((resolve, reject) => {
       wtkIndex.validateUser(formData)
       .then((validatedFormData) => {
@@ -45,51 +47,100 @@ module.exports={
         return reject(err)
       });
     });
+  },*/
+  forgotPswd: function (formData) {
+    return new Promise((resolve, reject) => {
+      let vData
+      wtkIndex.validateUser(formData)
+      .then((vUser) => {
+        vData = vUser
+        const userSettingsPromise = wtkIndex.getUserSettings()
+        const resetPswdPromise = wtkIndex.getResetPswd()
+        return Promise.all([userSettingsPromise, resetPswdPromise])
+      })
+      .then(([userSettings, resetPswd]) => {
+        const hash = CryptoJS.lib.WordArray.random(128 / 8).toString();
+        const today = new Date()
+        // console.log(today.setDate(today.getDate() + 1))
+        resetPswd[hash] = {
+          insertDate: today,
+          expirationDate: today.setDate(today.getDate() + 1),
+          step: "sendHash",
+          email: vData.wtkLoginName
+        }
+
+        // send resolve to confuse hacker
+        if (userSettings[formData.wtkLoginName] == undefined) 
+          return resolve("Ověřovací e-mail byl zaslán.") 
+
+        const saveResetPswdPromise = wtkIndex.saveResetPswd(resetPswd)
+        const sendMailPromise = wtkIndex.sendMail({
+          email: formData.wtkLoginName,
+          msg: `${hash}`
+        })
+
+        return Promise.all([saveResetPswdPromise, sendMailPromise])
+      })
+      .then((data) => {
+        return resolve("Ověřovací e-mail byl zaslán.")
+      })
+      .catch((err) => {
+        console.log(err)
+        return reject(err)
+      });
+
+
+    });
   },
   resetPswd:function(formData){
     return new Promise((resolve, reject) => {
-      
+      let vData
       wtkIndex.validateUser(formData)
-      .then((validatedFormData) => {
-        formData=validatedFormData
-        console.log(formData)
-        let pr1= wtkIndex.getResetPswd()
-        let pr2= wtkIndex.getUserSettings()
+      .then((vUser) => {
+        vData = vUser
+        // console.log(vData)
+        const userSettingsPromise = wtkIndex.getUserSettings()
+        const resetPswdPromise = wtkIndex.getResetPswd()
 
-        return Promise.all([pr1, pr2])
+        return Promise.all([userSettingsPromise, resetPswdPromise])
       })
-      .then((prAll) => {
-        let resetData=prAll[0]
-        let userSettings=prAll[1]
+      .then(([userSettings, resetPswd]) => {
 
         // console.log(new Date(resetData[formData.hash].expirationDate).getTime())
         // console.log(new Date(resetData[formData.hash].expirationDate))
         // console.log(new Date().getTime())
         // console.log(new Date().getTime() - new Date(resetData[formData.hash].expirationDate).getTime())
-        if (resetData[formData.hash]==undefined) { return reject("Ups! Něco se nepovedlo.") }
-        if (new Date(resetData[formData.hash].expirationDate).getTime() < new Date().getTime()) { return reject("Ups! Vypršela vám platnost!") }
+        if (resetPswd[vData.hash]==undefined) 
+          return reject("Ups! Něco se nepovedlo.") 
+        if (new Date(resetPswd[vData.hash].expirationDate).getTime() < 
+            new Date().getTime())
+          return reject("Ups! Vypršela vám platnost!") 
           
+        console.log('here');
+        const user = userSettings[resetPswd[vData.hash].email]
 
-        let user=userSettings[resetData[formData.hash].email]
+        let secQValid = false
+        if (vData.wtkSecQ1==user.secQ1) {
+          if (vData.wtkSecA1!=user.secA1)
+            return reject("Ups! Něco se nepovedlo.") 
+        }
+        if (vData.wtkSecQ1==user.secQ2) {
+          if (vData.wtkSecA1!=user.secA2) 
+            return reject("Ups! Něco se nepovedlo.") 
+        }
+        if (vData.wtkSecQ2==user.secQ1) {
+          if (vData.wtkSecA2!=user.secA1) 
+            return reject("Ups! Něco se nepovedlo.")
+        }
+        if (vData.wtkSecQ2==user.secQ2) {
+          if (vData.wtkSecA2!=user.secA2) 
+            return reject("Ups! Něco se nepovedlo.") 
+        }
 
-        let secQValid=false
-        if (formData.wtkSecQ1==user.secQ1) {
-          if (formData.wtkSecA1!=user.secA1) { return reject("Ups! Něco se nepovedlo.") }
-        }
-        if (formData.wtkSecQ1==user.secQ2) {
-          if (formData.wtkSecA1!=user.secA2) { return reject("Ups! Něco se nepovedlo.") }
-        }
-        if (formData.wtkSecQ2==user.secQ1) {
-          if (formData.wtkSecA2!=user.secA1) { return reject("Ups! Něco se nepovedlo.") }
-        }
-        if (formData.wtkSecQ2==user.secQ2) {
-          if (formData.wtkSecA2!=user.secA2) { return reject("Ups! Něco se nepovedlo.") }
-        }
 
-
-        resetData[formData.hash].step="pswd reset"
-        userSettings[resetData[formData.hash].email].pswd=""
-        return wtkIndex.saveUserSettings(JSON.stringify(userSettings))
+        resetPswd[vData.hash].step = "pswd reset"
+        userSettings[resetPswd[vData.hash].email].pswd=""
+        return wtkIndex.saveUserSettings(userSettings)
       })
       .then((data) => {
         return resolve("Vše ok")
@@ -100,51 +151,108 @@ module.exports={
       });
     });
   },
-  forgotPswd:function(formData){
+  newPswd:function(formData, res) {
     return new Promise((resolve, reject) => {
-
-      console.log('s')
+      let vData
       wtkIndex.validateUser(formData)
-      .then((data) => {
-        formData=data
-        console.log('sss')
-        let pr1= wtkIndex.getUserSettings()
-        let pr2= wtkIndex.getResetPswd()
-        return Promise.all([pr1,pr2])
-      })
-      .then((prAll) => {
-        let userSettings=prAll[0]
-        let resetPswdJson=prAll[1]
-        console.log('ssss')
+      .then((vUser) => {
+        vData = vUser
+        console.log(vData);
+        const userSettingsPromise = wtkIndex.getUserSettings()
+        const resetPswdPromise = wtkIndex.getResetPswd()
 
-        let hash=CryptoJS.lib.WordArray.random(128/8).toString();
-        let today= new Date()
-        // console.log(today.setDate(today.getDate() + 1))
-        resetPswdJson[hash]={
-          insertDate: today,
-          expirationDate: today.setDate(today.getDate() + 1),
-          step:"sendHash",
-          email:formData.wtkLoginName
-        }
-        
-        if (userSettings[formData.wtkLoginName]==undefined) { return resolve("Ověřovací e-mail byl zaslán.") }
-          console.log(resetPswdJson)
-        let pr1= wtkIndex.saveResetPswd(JSON.stringify(resetPswdJson))
-        let pr2= wtkIndex.sendMail({
-          email:formData.wtkLoginName, 
-          msg:`${hash}`
-        })
+        return Promise.all([userSettingsPromise, resetPswdPromise])
       })
-      .then((data) => {
-        return resolve(data)
+      .then(([userSettings, resetPswd]) => {
+        if (resetPswd[vData.hash] == undefined)
+          return reject("Ups! Něco se nepovedlo.")
+        if (new Date(resetPswd[vData.hash].expirationDate).getTime() <
+          new Date().getTime())
+          return reject("Ups! Vypršela vám platnost!")
+
+        console.log('here');
+        const user = userSettings[resetPswd[vData.hash].email]
+        console.log(user);
+        const salt = user.salt
+        const saltedPswdNew = 
+          CryptoJS.PBKDF2(vData.wtkLoginPswdNew, salt)
+          .toString(CryptoJS.enc.Hex)
+
+        vData.wtkLoginName = resetPswd[vData.hash].email
+        user.pswd = saltedPswdNew
+        
+        return wtkIndex.saveUserSettings(userSettings)
+      })
+      .then((response) => {
+        const loginUser = {
+          wtkLoginName: vData.wtkLoginName,
+          wtkLoginPswd: vData.wtkLoginPswdNew
+        }
+        console.log(res);
+        return this.loginUser(loginUser, res)
+      })
+      .then((response) => {
+        console.log(response);
+        return resolve()
       })
       .catch((err) => {
         console.log(err)
         return reject(err)
-      });
+        
+      })
+    })    
+  },
+  loginUser:function(formData, res) {
+    return new Promise((response, reject) => {
+      console.log(res);
+      let vData
+      wtkIndex.validateLogin(formData)
+      .then((vLogin) => {
+        vData = vLogin
+        return wtkIndex.getUserSettings()
+      })
+      .then(async (userSettings) => {
+        let user = userSettings[vData.wtkLoginName]
+        if (user == undefined) 
+          return res.status(401).send('Wrong user or password.') 
+        // let genSalt=CryptoJS.SHA256(CryptoJS.lib.WordArray.random(128/8)).toString(CryptoJS.enc.Hex)
 
-      
-    });
+        let userPswd = userSettings[vData.wtkLoginName].pswd
+        let salt = userSettings[vData.wtkLoginName].salt
+        let saltedPswd = 
+          CryptoJS.PBKDF2(vData.wtkLoginPswd, salt).toString(CryptoJS.enc.Hex)
+
+        //if invalid, return 401
+        if (saltedPswd !== userPswd) 
+          return res.status(401).send('Wrong user or password.') 
+
+        // let userInfo = {
+        //   first_name: 'John',
+        //   last_name: 'Doe',
+        //   email: vData.wtkLoginName,
+        //   id_u: 0
+        // };
+        // let userForWeb={
+        //   email:vData.wtkLoginName,
+        //   secQ1:userSettings[vData.wtkLoginName].secQ1,
+        //   secQ2:userSettings[vData.wtkLoginName].secQ2,
+        // }
+        // const user = getUser(vData.wtkLoginName)
+
+        const refreshSecret = saltedPswd + process.env.SECRET2
+
+        const [accessToken, refreshToken] = await generateTokens(user, process.env.SECRET, refreshSecret)
+        setTokens(accessToken, refreshToken, vData.wtkLoginName, res)
+        //jwtPswd==/wtk/serverSettings.json
+        // let token = jwt.sign(userInfo, serverSettings.jwtPswd);
+
+        return res.status(200).send()//.send({token: token, userForWeb:userForWeb});
+      })
+      .catch((err) => {
+        console.log(err)
+        return res.status(400).send(err)
+      });
+    })
   },
   editUser:function(formData, user) {
     return new Promise((resolve, reject) => {
@@ -207,6 +315,11 @@ module.exports={
         return reject(err)
       });
     });
+  },
+  logoutUser:function(user, res) {
+    return new Promise((resolve, reject) => {
+      return resolve(logout(res))
+    })
   },
 
   getMetaData:function() {

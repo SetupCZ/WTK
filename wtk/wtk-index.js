@@ -1,10 +1,8 @@
 'use strict';
-
 const fs = require('fs');
 const path = require('path');
 const xss = require('xss');
 const sanitizeHtml = require('sanitize-html');
-let alocDataGlobal={}
 const cjBase='';
 const settings = require('./serverSettings.json');
 
@@ -12,6 +10,7 @@ const nodemailer = require("nodemailer");
 const https = require("https");
 const smtpTransport = require('nodemailer-smtp-transport');
 
+let alocDataGlobal = {}
 const filterEverything = {
   whitelist:[],
   stripIgnoreTag:true,
@@ -20,8 +19,8 @@ const filterEverything = {
 const mailGlobalReg = new RegExp(/^([\w\.\-_]+)?\w+@[\w-_]+(\.\w+){1,}$/)
 const pswdGlobalReg = new RegExp(/^([a-zA-z0-9]){64}$/)
 const nameGlobalReg = new RegExp(/^([0-9A-Za-z_-])+(\/contents\/)*([0-9A-Za-z_-])+$/)
-const textGlobalReg = new RegExp(/^[a-zA-ZěščřžýáíéúůďťňóĚŠČŘŽÝÁÍÉÚŮĎŤŇÚÓ \-\_\!\?\:\/\\\'\(\)\[\]\{\}\,\.]+$/)
-const regExpGlobalReg = new RegExp(/^[a-zA-ZěščřžýáíéúůďťňóĚŠČŘŽÝÁÍÉÚŮĎŤŇÚÓ \-\_\!\?\:\/\\\']*$/)
+const textGlobalReg = new RegExp(/^[0-9a-zA-ZěščřžýáíéúůďťňóĚŠČŘŽÝÁÍÉÚŮĎŤŇÚÓ \-\_\!\?\:\/\\\'\(\)\[\]\{\}\,\.]+$/)
+const regExpGlobalReg = new RegExp(/^[0-9a-zA-ZěščřžýáíéúůďťňóĚŠČŘŽÝÁÍÉÚŮĎŤŇÚÓ \-\_\!\?\:\/\\\']*$/)
 const urlGlobalReg = new RegExp(/^(.*)$/)
 const pathGlobalReg = new RegExp(/^((?!\.\.\/).)*(\.jpg|png|json|html)$/i)
 
@@ -37,10 +36,12 @@ function returnAlocDataByName(alocData, name, resolve) {
 module.exports={
   sendMail:function(body){
     return new Promise((resolve, reject) => {
-      let regName = new RegExp("^([ěščřžýáíéóúůďťňĎŇŤŠČŘŽÝÁÍÉÚŮa-zA-Z ])+$");
-      let regMail = new RegExp("^([A-Z|a-z|0-9](\\.|_){0,1})+[A-Z|a-z|0-9]\\@([A-Z|a-z|0-9])+((\\.){0,1}[A-Z|a-z|0-9]){2}\\.[a-z]{2,3}$");
-      if(!regName.test(body.name)){ return res.status(400).send("Špatně zadané jméno!"); };
-      if(!regMail.test(body.email)){ return res.status(400).send("Špatně zadaný E-mail!"); };
+      const regName = textGlobalReg
+      const regMail = mailGlobalReg
+      if( !regName.test(body.name) ) 
+        return res.status(400).send("Špatně zadané jméno!"); 
+      if( !regMail.test(body.email) )
+        return res.status(400).send("Špatně zadaný E-mail!"); 
 
       let transporter = nodemailer.createTransport(smtpTransport({
         host: 'localhost',
@@ -51,17 +52,19 @@ module.exports={
       }));
 
       let mailOptions = {
-        from:"jarkovsky.d@gmail.com", // sender address
+        from:"jarkovsky.d@gmail.com", // sender address TODO: change
         to: body.email, // list of receivers
         subject: 'WTK reset heslo', // Subject line
         text: body.msg  // plaintext body
       };
 
+      console.log(`Your resetPSWD hash is: \n ${body.msg}\n -----------------`);
       // cos localhost
       return resolve(body.msg)
       
       transporter.sendMail(mailOptions, function(error, info){
-        if(error){console.log(error); return reject("E-mail se nepodařilo odeslat.") }
+        if(error) 
+          return reject("E-mail se nepodařilo odeslat.") 
         return resolve('E-mail se úspěšně odeslal!');
       });
     });
@@ -78,7 +81,7 @@ module.exports={
   saveResetPswd:function (reserPswd) {
     return new Promise((resolve, reject) => {
       var filePath=path.resolve(__dirname, 'resetPswd.json');
-      fs.writeFile(filePath, reserPswd, function(err, data) {
+      fs.writeFile(filePath, JSON.stringify(reserPswd), function(err, data) {
         if (err) { console.log(err); return reject(err) }
         else{ return resolve(data) };
       });
@@ -97,7 +100,7 @@ module.exports={
   saveUserSettings:function (userSett) {
     return new Promise((resolve, reject) => {
       var filePath=path.resolve(__dirname, 'userSettings.json');
-      fs.writeFile(filePath, userSett, function(err, data) {
+      fs.writeFile(filePath, JSON.stringify(userSett), function(err, data) {
         if (err) { console.log(err); return reject(err) }
         else{ return resolve(data) };
       });
@@ -324,6 +327,10 @@ module.exports={
         wtkLoginPswdNewAgain:{
           reg:pswdGlobalReg,
           msg:"USER NEW AGAIN PASSWORD is wrong!"
+        },
+        hash: {
+          reg: textGlobalReg,
+          msg: "USER HASH is wrong!"
         },
       }
       // console.log(data)

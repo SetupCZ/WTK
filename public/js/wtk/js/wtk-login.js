@@ -1,4 +1,4 @@
-import validateInput from './wtkValidateInput.js'
+import validateInput from '../wtkValidateInput.js'
 const validateClass = new validateInput()
 
 class wtkBasic {

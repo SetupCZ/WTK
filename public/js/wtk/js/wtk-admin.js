@@ -142,7 +142,7 @@ class wtkAdmin {
     if (!validForm) { return this.wtkClass.toast("invalid form") }
 
     const userHeaders = new Headers();
-          userHeaders.append('Content-Type', 'application/json');
+          userHeaders.append('Content-Type','application/json');
 
     const path = `${this.wtkClass.api}/user`
     const response = await fetch(path, { 

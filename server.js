@@ -39,33 +39,35 @@ app.use('/users', users);
 
 // wtk
 // wtk routes
-const wtk = require('./wtk/wtk-index.js');
-const wtkInit = require('./routes/wtk-init');
-const wtkAuth = require('./routes/wtk-auth');
-app.use('/wtk', wtkInit);
-app.use('/wtk/auth', async (req, res, next) => {
-  const [accessToken, refreshToken] = getTokens(req)
-  if (!accessToken) return next()
-  try {
-    const { user } = jwt.verify(accessToken, process.env.SECRET)
-    req.user = user
-    console.log('inTokenVerified');
+const wtk = require('./wtk/wtk.js');
+app.use(wtk)
 
-  } catch (err) {
-    console.log('inError');
-    if (err.name === "TokenExpiredError" && err.message === "jwt expired") {
-      console.log('inTokenExpirated');
-      const [newAccessToken, newRefreshToken, user] = await refreshTokens(accessToken, refreshToken, process.env.SECRET, process.env.SECRET2)
-      if (newAccessToken && newRefreshToken) {
-        console.log('inNewTokens');
-        setTokens(newAccessToken, newRefreshToken, user.id, res)
-        req.user = user
-      }
-    }
-  }
-  next()
-});
-app.use('/wtk/auth', wtkAuth);
+// const wtkInit = require('./routes/wtk-init');
+// const wtkAuth = require('./routes/wtk-auth');
+// app.use('/wtk', wtk.wtkInit);
+// app.use('/wtk/auth', async (req, res, next) => {
+//   const [accessToken, refreshToken] = getTokens(req)
+//   if (!accessToken) return next()
+//   try {
+//     const { user } = jwt.verify(accessToken, process.env.SECRET)
+//     req.user = user
+//     console.log('inTokenVerified');
+
+//   } catch (err) {
+//     console.log('inError');
+//     if (err.name === "TokenExpiredError" && err.message === "jwt expired") {
+//       console.log('inTokenExpirated');
+//       const [newAccessToken, newRefreshToken, user] = await refreshTokens(accessToken, refreshToken, process.env.SECRET, process.env.SECRET2)
+//       if (newAccessToken && newRefreshToken) {
+//         console.log('inNewTokens');
+//         setTokens(newAccessToken, newRefreshToken, user.id, res)
+//         req.user = user
+//       }
+//     }
+//   }
+//   next()
+// });
+// app.use('/wtk/auth', wtkAuth);
 
 
 // catch 404 and forward to error handler

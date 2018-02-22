@@ -1,8 +1,10 @@
+  testing
 x Remove alocData:[] from alocData
 x MetaData items transform to object
-  ResetPSWD
-  render ejs change to send html from wtk views
+x ResetPSWD
+x render ejs change to send html from wtk views
   figure out paths
+  on server make use wtk for routes and authentication
   Replace data with https://github.com/adamreisnz/replace-in-file
 x Search
 x add link as default attr for content

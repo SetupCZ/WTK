@@ -2,6 +2,7 @@
   "name": "wtk",
   "version": "0.0.0",
   "private": true,
+  "main": "wtk.js",
   "scripts": {
     "start": "gulp start"
   },

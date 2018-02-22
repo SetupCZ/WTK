@@ -4,23 +4,23 @@ const path = require('path');
 const expressJwt=require('express-jwt');
 const jwt=require('jsonwebtoken');
 const CryptoJS = require("crypto-js")
-const userSettings = require("../wtk/userSettings.json")
-const serverSettings = require("../wtk/serverSettings.json")
-const wtkIndex = require('../wtk/wtk-index.js');
+const userSettings = require("../userSettings.json")
+const serverSettings = require("../serverSettings.json")
+const wtkIndex = require('../wtk-index.js');
 const { generateTokens, setTokens, getUser } = require('../authentication');
 
-const wtk = require('../wtk/wtk-ctrl.js');
+const wtk = require('../wtk-ctrl.js');
 const router = express.Router();
 
 
-router.get('/wtk-login', function(req, res, next) {
-  res.sendFile(path.resolve(__dirname, serverSettings.viewsPath, 'login.html'))
+router.get('/wtk/wtk-login', function(req, res, next) {
+  res.sendFile(path.resolve(__dirname,'../', serverSettings.viewsPath, 'login.html'))
 });
-router.get('/wtk-reset-password', (req, res, next) => {
+router.get('/wtk/wtk-reset-password', (req, res, next) => {
   res.sendFile(path.resolve(__dirname, serverSettings.viewsPath,'reset-password.html'))
 })
-// TODO: prettify
-router.post('/wtk-login', async function(req, res, next) {
+// TODO: pritiffy
+router.post('/wtk/wtk-login', async function(req, res, next) {
   let data=req.body;
   wtkIndex.validateLogin(data)
   .then(async (validatedData) => {
@@ -64,7 +64,7 @@ router.post('/wtk-login', async function(req, res, next) {
   });
 });
 // TODO: make this
-router.post('/wtk-forgotPswd', function(req, res, next) {
+router.post('/wtk/wtk-forgotPswd', function(req, res, next) {
   const data = req.body
   wtk.forgotPswd(data)
   .then((data) => {
@@ -75,7 +75,7 @@ router.post('/wtk-forgotPswd', function(req, res, next) {
     return res.status(400).send(err)
   });
 });
-router.post('/wtk-resetPswd', function (req, res, next) {
+router.post('/wtk/wtk-resetPswd', function (req, res, next) {
   const data = req.body
   wtk.resetPswd(data)
   .then((data) => {
@@ -86,7 +86,7 @@ router.post('/wtk-resetPswd', function (req, res, next) {
     return res.status(400).send(err)
   });
 });
-router.post('/wtk-newPswd', function (req, res, next) {
+router.post('/wtk/wtk-newPswd', function (req, res, next) {
   const data = req.body
   console.log(res);
   wtk.newPswd(data, res)
@@ -100,7 +100,7 @@ router.post('/wtk-newPswd', function (req, res, next) {
 });
 
 // TODO: remove i gues
-router.get('/getMetaData', function(req, res, next) {
+router.get('/wtk/getMetaData', function(req, res, next) {
   wtk.getMetaData()
   .then((data) => {
     console.log('-------------------')
@@ -116,7 +116,7 @@ router.get('/getMetaData', function(req, res, next) {
 
 ////////////////////
 // get groups
-router.get('/groups', function(req, res, next) {
+router.get('/wtk/groups', function(req, res, next) {
   wtk.getGroups()
   .then((data) => {
     return res.status(200).send(data)
@@ -126,7 +126,7 @@ router.get('/groups', function(req, res, next) {
     return res.status(400).send(err)
   });
 });
-router.get('/groups/:name', function(req, res, next) {
+router.get('/wtk/groups/:name', function(req, res, next) {
   let name=req.params.name
   // validate name 
   wtk.getMetaDataByName(name)
@@ -139,7 +139,7 @@ router.get('/groups/:name', function(req, res, next) {
   });
 });
 // get list of all contents(meta)
-router.get('/groups/:name/contents', function(req, res, next) {
+router.get('/wtk/groups/:name/contents', function(req, res, next) {
   let name=req.params.name
   // validate name 
   console.log(name)
@@ -155,7 +155,7 @@ router.get('/groups/:name/contents', function(req, res, next) {
   });
 });
 // get metadata for content by name
-router.get('/groups/:name/contents/:contName', function(req, res, next) {
+router.get('/wtk/groups/:name/contents/:contName', function(req, res, next) {
   let name=req.params.name
   let contName=req.params.contName
   // validate name 
@@ -169,7 +169,7 @@ router.get('/groups/:name/contents/:contName', function(req, res, next) {
   });
 });
 // get list of items from content by name
-router.get('/groups/:name/contents/:contName/items', function(req, res, next) {
+router.get('/wtk/groups/:name/contents/:contName/items', function(req, res, next) {
   let name=req.params.name
   let contName=req.params.contName
   // validate name 
@@ -183,7 +183,7 @@ router.get('/groups/:name/contents/:contName/items', function(req, res, next) {
   });
 });
 // get items content from content by name and id
-router.get('/groups/:name/contents/:contName/items/:id/content', function(req, res, next) {
+router.get('/wtk/groups/:name/contents/:contName/items/:id/content', function(req, res, next) {
   let name=req.params.name
   let contName=req.params.contName
   let id=req.params.id
@@ -200,7 +200,7 @@ router.get('/groups/:name/contents/:contName/items/:id/content', function(req, r
 });
 // get items metadata from content by name and id
 // TODO: delete this i gues
-router.get('/groups/:name/contents/:contName/items/:id', function(req, res, next) {
+router.get('/wtk/groups/:name/contents/:contName/items/:id', function(req, res, next) {
   let name=req.params.name
   let contName=req.params.contName
   let id=req.params.id
@@ -222,7 +222,7 @@ router.get('/groups/:name/contents/:contName/items/:id', function(req, res, next
 //////////////////////////
 // content
 // get list of all contents(meta)
-router.get('/contents', function(req, res, next) {
+router.get('/wtk/contents', function(req, res, next) {
   wtk.getContents()
   .then((data) => {
     return res.status(200).send(data)
@@ -233,7 +233,7 @@ router.get('/contents', function(req, res, next) {
   });
 });
 // get metadata for content by name
-router.get('/contents/:name/', function(req, res, next) {
+router.get('/wtk/contents/:name/', function(req, res, next) {
   let name=req.params.name
   // validate name 
   wtk.getMetaDataByName(name)
@@ -246,7 +246,7 @@ router.get('/contents/:name/', function(req, res, next) {
   });
 });
 // get list of items from content by name
-router.get('/contents/:name/items', function(req, res, next) {
+router.get('/wtk/contents/:name/items', function(req, res, next) {
   let name=req.params.name
   wtk.getItemsDataByName(name, true)
   .then((data) => {
@@ -259,7 +259,7 @@ router.get('/contents/:name/items', function(req, res, next) {
 });
 
 // get items content from content by name and id
-router.get('/contents/:name/items/:id/content', function(req, res, next) {
+router.get('/wtk/contents/:name/items/:id/content', function(req, res, next) {
   let name=req.params.name
   let id=req.params.id
   // validate name 
@@ -273,7 +273,7 @@ router.get('/contents/:name/items/:id/content', function(req, res, next) {
   });
 });
 // get items metadata from content by name and id
-router.get('/contents/:name/items/:id', function(req, res, next) {
+router.get('/wtk/contents/:name/items/:id', function(req, res, next) {
   let name=req.params.name
   let id=req.params.id
   // validate name 
@@ -291,7 +291,7 @@ router.get('/contents/:name/items/:id', function(req, res, next) {
 
 // /////////////////////////////////////
 // search
-router.get('/search', function(req, res, next) {
+router.get('/wtk/search', function(req, res, next) {
   console.log(req.query.wtkName)
   let wtkName=req.query.wtkName
   let query=req.query.query
